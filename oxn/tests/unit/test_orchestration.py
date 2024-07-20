@@ -1,7 +1,7 @@
 import unittest
 import yaml
 
-from oxn.orchestration import DockerComposeOrchestrator
+from docker_orchestration import DockerComposeOrchestrator
 from oxn.tests.unit.spec_mocks import experiment_spec_mock
 
 

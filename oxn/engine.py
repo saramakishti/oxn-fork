@@ -3,7 +3,7 @@ import schema
 import yaml
 
 from .runner import ExperimentRunner
-from .orchestration import DockerComposeOrchestrator
+from .docker_orchestration import DockerComposeOrchestrator
 from .report import Reporter
 from .store import write_dataframe
 from .loadgen import LoadGenerator
