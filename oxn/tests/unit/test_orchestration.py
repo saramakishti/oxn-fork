@@ -5,7 +5,7 @@ from docker_orchestration import DockerComposeOrchestrator
 from oxn.tests.unit.spec_mocks import experiment_spec_mock
 
 
-class OrchestrationTest(unittest.TestCase):
+class DockerOrchestrationTest(unittest.TestCase):
     spec = experiment_spec_mock
     loaded_spec = yaml.safe_load(spec)
 

@@ -6,4 +6,6 @@ Connection: Serves as the script that is executed to start the application.
 
 from .main import main
 
+#from .kubernetes_orchestrator import main
+
 main()

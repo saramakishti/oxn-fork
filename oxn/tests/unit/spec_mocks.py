@@ -73,3 +73,25 @@ experiment:
     - { endpoint: /api/cart, verb: get, weight: 1, params: {}}
     - { endpoint: /api/data, verb: get, weight: 1, params: {"contextKeys": ["telescopes"]}}
 """
+
+kubernetes_experiment = """
+# inject a packet delay of 0-90ms while increasing the otel metric inverval to 1s
+experiment:
+  responses:
+    - recommendations_total:
+        type: metric
+        metric_name: increase(app_recommendations_counter_total[90s])
+        left_window: 240s
+        right_window: 240s
+        step: 1
+  sue:
+    compose: opentelemetry-demo/docker-compose.yml
+    exclude: [loadgenerator]
+    required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}] 
+  loadgen:
+    run_time: 10m
+    stages: 
+    - {duration: 600, users: 50, spawn_rate: 25}
+    tasks:
+    - { endpoint: /, verb: get, weight: 1, params: { } }
+"""

@@ -224,3 +224,10 @@ class DockerComposeOrchestrator(Orchestrator):
             time.sleep(int(os.environ["OXN_WAIT"]))
         self.compose_client.compose.down(remove_orphans=True, quiet=True)
         self.docker_client.close()
+
+    def execute_console_command(self, service: str, command: str) -> Tuple[int, str]:
+        #self.orchestrator.execute_console_command(service, command)
+        #container = self.client.containers.get(container_id=service)
+        #status_code, _ = container.exec_run(cmd=command)
+        logging.info("execute_console_command noop implementation for service %s with command %s", service, command)
+        return -1, "noop"

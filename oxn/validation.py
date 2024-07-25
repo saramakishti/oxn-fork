@@ -199,6 +199,12 @@ syntactic_schema = schema.Schema(
                 "compose": str,
                 schema.Optional("exclude"): list[str],
                 schema.Optional("include"): list[str],
+                schema.Optional("required"): [
+                    {
+                        "namespace": str,
+                        "name": str,
+                    }
+                ]
             },
             "loadgen": {
                 "run_time": str,
