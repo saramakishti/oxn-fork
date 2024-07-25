@@ -3,8 +3,9 @@ class OxnException(Exception):
 
     def __init__(self, message: object = None, explanation: object = None) -> object:
         """Provide additional exception explanation"""
-        super(OxnException, self).__init__(message)
         self.explanation = explanation
+        self.message = message
+        super(OxnException, self).__init__(message)
 
     def __str__(self):
         message = super(OxnException, self).__str__()
