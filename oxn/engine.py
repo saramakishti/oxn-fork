@@ -11,6 +11,7 @@ import yaml
 
 from .runner import ExperimentRunner
 from .docker_orchestration import DockerComposeOrchestrator
+from .kubernetes_orchestrator import KubernetesOrchestrator
 from .report import Reporter
 from .store import write_dataframe
 from .loadgen import LoadGenerator
@@ -86,23 +87,25 @@ class Engine:
         logger.info(f"Running experiment {self.config} for {runs} times")
         for idx in range(runs):
             logger.info(f"Experiment run {idx + 1} of {runs}")
-            self.orchestrator = DockerComposeOrchestrator(
+            self.orchestrator = KubernetesOrchestrator(
                 experiment_config=self.spec,
             )
             self.generator = LoadGenerator(config=self.spec)
-            names = (
+            names = []
+            """ (
                 self.orchestrator.translate_compose_names(
                     self.orchestrator.sue_service_names
                 )
                 if accounting
                 else []
-            )
+            ) """
             self.runner = ExperimentRunner(
                 config=self.spec,
                 config_filename=self.config,
                 additional_treatments=self.additional_treatments,
                 random_treatment_order=randomize,
                 accountant_names=names,
+                orchestrator=self.orchestrator,
             )
             self.runner.execute_compile_time_treatments()
             self.orchestrator.orchestrate()
@@ -118,7 +121,7 @@ class Engine:
             for treatment in self.runner.treatments.values():
                 if not treatment.preconditions():
                     raise OxnException(
-                        message=f"Error while checking preconditions for treatment {treatment.name}",
+                        message=f"Error while checking preconditions for treatment {treatment.name} which is class {treatment.__class__}",
                         explanation="\n".join(treatment.messages),
                     )
             self.generator.start()

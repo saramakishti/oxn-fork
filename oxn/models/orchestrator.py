@@ -1,5 +1,5 @@
 from abc import ABC, abstractmethod
-from typing import List
+from typing import List, Tuple
 
 class Orchestrator(ABC):
     """
@@ -29,4 +29,18 @@ class Orchestrator(ABC):
     @property
     @abstractmethod
     def running_services(self) -> List[str]:
+        pass
+
+    @abstractmethod
+    def execute_console_command(self, service: str, command: str) -> Tuple[int, str]:
+        """
+        Execute a console command on the orchestrator
+
+        Args:
+            command: The command to execute
+
+        Returns:
+            A tuple of the return code and the output of the command
+
+        """
         pass

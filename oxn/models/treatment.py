@@ -10,6 +10,7 @@ import uuid
 
 from oxn.errors import OxnException
 from oxn.utils import humanize_utc_timestamp
+from oxn.models.orchestrator import Orchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -17,11 +18,13 @@ logger = logging.getLogger(__name__)
 # TODO: think about refactoring validation of params into validator class so it can happen earlier
 
 class Treatment(abc.ABC):
-    def __init__(self, config, name):
+    def __init__(self, config, name, orchestrator):
         self.id: str = uuid.uuid4().hex
         """Random machine-readable unique identifier"""
         self.name: str = name
         """The name of the treatment as provided in the experiment specification"""
+        self.orchestrator: Orchestrator = orchestrator
+        """A reference to the orchestrator instance"""
         self.config: dict = config
         """A dictionary containing parameter names and supplied parameter values from the experiment specification"""
         self.start = None

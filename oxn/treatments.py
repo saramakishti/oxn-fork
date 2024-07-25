@@ -80,6 +80,11 @@ class EmptyTreatment(Treatment):
         return True
 
 
+"""
+    An Article on Add Java Agents to Existing Kubernetes and Helm Applications Instantly
+    https://www.cncf.io/blog/2021/03/24/add-java-agents-to-existing-kubernetes-and-helm-applications-instantly/
+    here with better format: https://www.rookout.com/blog/add-java-agents-to-existing-kubernetes-and-helm-applications-instantly/
+"""
 class ByteMonkeyTreatment(Treatment):
     """Compile-time treatment that injects faults into a java service"""
 
@@ -722,8 +727,10 @@ class NetworkDelayTreatment(Treatment):
         service = self.config.get("service_name")
         command = ["tc", "-Version"]
         try:
-            container = self.client.containers.get(container_id=service)
-            status_code, _ = container.exec_run(cmd=command)
+            #self.orchestrator.execute_console_command(service, command)
+            #container = self.client.containers.get(container_id=service)
+            #status_code, _ = container.exec_run(cmd=command)
+            status_code, _ = self.orchestrator.execute_console_command(service, command)
             logger.info(f"Probed container {service} for tc with result {status_code}")
             if not status_code == 0:
                 self.messages.append(

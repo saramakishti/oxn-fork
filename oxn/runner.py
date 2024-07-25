@@ -34,6 +34,7 @@ from .observer import Observer
 from .pricing import Accountant
 from .utils import utc_timestamp
 from .models.treatment import Treatment
+from .models.orchestrator import Orchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -65,12 +66,14 @@ class ExperimentRunner:
 
     def __init__(
             self,
+            orchestrator:Orchestrator,
             config=None,
             config_filename=None,
             additional_treatments=None,
             random_treatment_order=False,
             accountant_names=None,
     ):
+        self.orchestrator = orchestrator
         self.config = config
         """Experiment specification dict"""
         self.config_filename = config_filename
@@ -147,20 +150,19 @@ class ExperimentRunner:
             params = description["params"]
             action = description["action"]
             self.treatments[key] = self._build_treatment(
-                action=action, params=params, name=key
+                action=action, params=params, name=key, orchestrator=self.orchestrator
             )
             logger.debug("Successfully built treatment %s", self.treatments[key])
 
-    def _build_treatment(self, action, params, name) -> Treatment:
+    def _build_treatment(self, action, params, name, orchestrator) -> Treatment:
         """Build a single treatment from a description"""
         treatment_class = self.treatment_keys.get(action)
-        try:
-            instance = treatment_class(config=params, name=name)
-        except TypeError:
+        if treatment_class is None:
             raise OxnException(
                 message=f"Error while building treatment {name}",
                 explanation=f"Treatment key {action} does not exist in the treatment library",
             )
+        instance = treatment_class(config=params, name=name, orchestrator=orchestrator)
         return instance
 
     def _extend_treatments(self) -> None:
