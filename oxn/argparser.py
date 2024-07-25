@@ -1,3 +1,9 @@
+""" 
+Purpose: Handles command-line argument parsing.
+Functionality: Defines and validates the command-line arguments required to run the experiment.
+Connection: Used by main.py to parse and validate input arguments.
+ """
+
 import argparse
 import os
 

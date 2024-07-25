@@ -1,4 +1,9 @@
-"""Module to handle data capture during experiment execution"""
+"""
+Purpose: Observes and records response variables during experiments.
+Functionality: Initializes response variables and collects data during the experiment.
+Connection: Works with responses.py to monitor and collect experiment results.
+
+Module to handle data capture during experiment execution"""
 import logging
 from typing import Optional
 from operator import attrgetter

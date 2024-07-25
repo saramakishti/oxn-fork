@@ -1,4 +1,9 @@
-"""Implementations of Response Variables"""
+"""
+Purpose: Defines response variables for observing experiment results.
+Functionality: Implements methods to query and process data from Prometheus and Jaeger.
+Connection: Used by the Observer to collect and process response variables during experiments.
+
+Implementations of Response Variables"""
 import datetime
 
 import numpy as np

@@ -1,4 +1,9 @@
-"""Experiment runner"""
+"""
+Purpose: Manages the execution of an experiment run.
+Functionality: Applies treatments, runs the experiment, and collects results.
+Connection: Core component that uses treatments and observer to perform an experiment.
+
+Experiment runner"""
 import logging
 import random
 import time

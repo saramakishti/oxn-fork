@@ -1,3 +1,9 @@
+""" 
+Purpose: Defines the base class for treatments.
+Functionality: Provides an abstract base class Treatment with methods to be implemented by subclasses.
+Connection: Used as a base class for specific treatment implementations in treatments.py.
+ """
+
 import abc
 import logging
 import uuid

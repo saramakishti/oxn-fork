@@ -1,4 +1,9 @@
-"""Treatment implementations"""
+"""
+Purpose: Implements various treatments to be applied during experiments.
+Functionality: Defines treatment classes that simulate different fault conditions or changes to the services under test.
+Connection: Loaded by the Runner to apply treatments during an experiment.
+
+Treatment implementations"""
 import logging
 import os.path
 import tempfile

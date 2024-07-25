@@ -1,4 +1,9 @@
 """
+Purpose: Manages data storage.
+Functionality: Provides methods to read/write data to an HDF5 store and manage a Trie structure for efficient lookups.
+Connection: Used by various components to persist and retrieve experimental data.
+
+
 Simple HDF5-based storage
 """
 import pickle

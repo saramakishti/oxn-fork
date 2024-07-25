@@ -1,3 +1,9 @@
+""" 
+Purpose: Manages load generation for experiments.
+Functionality: Uses locust to generate load on the services under experiment based on the configuration.
+Connection: Called by the Engine to simulate load during experiments.
+ """
+
 import logging
 from typing import List
 

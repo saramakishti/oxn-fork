@@ -1,4 +1,9 @@
 """
+
+Purpose: Manages the execution context and dynamically loads user-defined treatments.
+Functionality: Loads and validates treatment classes from a specified file.
+Connection: Allows the application to dynamically include custom treatments defined by the user.
+
 Module for providing an execution context to experiments
 
 heavily inspired by https://github.com/locustio/locust

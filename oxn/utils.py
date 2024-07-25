@@ -1,3 +1,10 @@
+""" 
+Purpose: Provides utility functions.
+Functionality: Contains helper functions for time conversion, file manipulation, and environment variable management.
+Connection: Utility functions are used across different modules for common tasks.
+
+ """
+
 import os
 import re
 from typing import Callable

@@ -1,3 +1,9 @@
+""" 
+Purpose: Main script to initialize and run the experiment.
+Functionality: Parses command-line arguments, initializes logging, creates an Engine instance, and runs the experiment.
+Connection: Central coordination script that ties together argument parsing, logging, and experiment execution.
+ """
+
 import logging
 import sys
 

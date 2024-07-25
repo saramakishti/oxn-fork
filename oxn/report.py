@@ -1,4 +1,9 @@
-"""Handle the generation of experiment reports"""
+"""
+Purpose: Generates reports from experiment results.
+Functionality: Collects and formats interaction data between treatments and responses, generates statistical analyses, and writes to a report file.
+Connection: Called by main.py and Engine to compile and save experiment results.
+
+Handle the generation of experiment reports"""
 import uuid
 from typing import Tuple, Union
 

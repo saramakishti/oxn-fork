@@ -1,4 +1,9 @@
-"""Module to handle validation of experiment specifications"""
+"""
+Purpose: Validates experiment specifications.
+Functionality: Implements syntactic and semantic validation of experiment configurations.
+Connection: Used by the Engine to ensure the experiment configuration is correct before execution.
+
+Module to handle validation of experiment specifications"""
 from typing import Set, List
 
 import schema

@@ -1,4 +1,9 @@
 """
+
+Purpose: Calculates resource utilization and costs during an experiment.
+Functionality: Collects and consolidates CPU and memory usage statistics using psutil and Docker stats.
+Connection: Used to generate cost-related metrics and is invoked by the Runner and Reporter.
+
 Module to price a synthetic dataset produced by an observability experiment
 
 The price of a dataset is defined as the expended resources during an experiment

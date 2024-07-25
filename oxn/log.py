@@ -1,4 +1,9 @@
-"""Logging configuration for oxn"""
+"""
+Purpose: Configures logging for the application.
+Functionality: Initializes and configures logging settings based on provided log level and optional log file.
+Connection: Used by main.py to set up logging.
+
+Logging configuration for oxn"""
 import logging
 import socket
 import logging.config

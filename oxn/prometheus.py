@@ -1,4 +1,9 @@
-"""Wrapper around the Prometheus HTTP API"""
+"""
+Purpose: Interacts with the Prometheus API.
+Functionality: Provides methods to query metrics and labels from Prometheus.
+Connection: Used by responses.py and validation.py to gather metrics and validate configurations.
+
+Wrapper around the Prometheus HTTP API"""
 import logging
 import requests
 from requests.adapters import Retry, HTTPAdapter

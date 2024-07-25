@@ -1,4 +1,9 @@
-"""Wrapper around the internal Jaeger tracing API"""
+"""
+Purpose: Interacts with the Jaeger API.
+Functionality: Provides methods to query traces and services from Jaeger.
+Connection: Used by responses.py and validation.py to gather trace data and validate configurations.
+
+Wrapper around the internal Jaeger tracing API"""
 from typing import Optional, Union
 
 import requests

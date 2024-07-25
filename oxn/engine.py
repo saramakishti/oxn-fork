@@ -1,3 +1,10 @@
+""" 
+Purpose: Core logic for executing experiments.
+Functionality: Manages the orchestration, execution, and observation of experiments.
+Connection: Central component that coordinates between treatments, load generation, and response observation.
+
+ """
+
 import logging
 import schema
 import yaml
