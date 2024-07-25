@@ -5,7 +5,6 @@ Connection: Called by the Engine to manage the lifecycle of the SUE.
 
 Module to handle orchestration of a system under experiment"""
 import logging
-from math import e
 import os
 import time
 from pathlib import Path
@@ -14,21 +13,21 @@ from typing import Optional, List
 import docker.errors
 import python_on_whales
 from python_on_whales import DockerClient
-from python_on_whales import DockerException
 from docker.errors import NotFound
+from yaml import compose
 from .errors import OrchestrationException
+from oxn.models.orchestrator import Orchestrator  # Import the abstract base class
 
 logger = logging.getLogger(__name__)
 
 
-class DockerComposeOrchestrator:
+class DockerComposeOrchestrator(Orchestrator):
     """
     Container orchestration for building the system under experiment
 
     Wrapper class around docker via python-on-whales and docker-py
     to provide container orchestration features. We use python-on-whales
     for scripting around docker compose and docker-py for everything else.
-
     """
 
     def __init__(self, experiment_config=None):
@@ -78,7 +77,7 @@ class DockerComposeOrchestrator:
                         self.messages.append(
                             f"Excluded service {service_name} does not exist in the compose file"
                         )
-        except DockerException:
+        except python_on_whales.DockerException:
             self.messages.append("Specified compose file has invalid format")
         if self.messages:
             explanation = "\n".join(self.messages)
