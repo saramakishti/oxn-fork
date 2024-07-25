@@ -1,0 +1,29 @@
+{
+    // Use IntelliSense to learn about possible attributes.
+    // Hover to view descriptions of existing attributes.
+    // For more information, visit: https://go.microsoft.com/fwlink/?linkid=830387
+    "version": "0.2.0",
+    "configurations": [
+        {
+            "name": "Unit Tests: Module",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "unittest",
+            "env": {
+                "GEVENT_SUPPORT": "True"
+            }
+        },
+        {
+            "name": "Python Debugger: Module",
+            "type": "debugpy",
+            "request": "launch",
+            "module": "oxn",
+            "env": {
+                "GEVENT_SUPPORT": "True"
+            },
+            "args": [
+                "experiments/test.yml"
+            ]
+        }
+    ],
+}
