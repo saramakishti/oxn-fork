@@ -4,8 +4,8 @@ experiment:
     - recommendations_total:
         type: metric
         metric_name: increase(app_recommendations_counter_total[90s])
-        left_window: 240s
-        right_window: 240s
+        left_window: 10s
+        right_window: 10s
         step: 1
   treatments:
     - delay_treatment:
@@ -14,7 +14,7 @@ experiment:
           service_name: node-exporter,
           delay_time: 45ms,
           delay_jitter: 45ms,
-          duration: 120s,
+          duration: 10s,
           interface: eth0,
         }
     - interval:
@@ -32,7 +32,7 @@ experiment:
   loadgen:
     run_time: 10m
     stages: 
-    - {duration: 600, users: 50, spawn_rate: 25}
+    - {duration: 20, users: 50, spawn_rate: 25}
     tasks:
     - { endpoint: /, verb: get, weight: 1, params: { } }
     - { endpoint: /api/products/0PUK6V6EV0, verb: get, weight: 10, params: { } }

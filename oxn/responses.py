@@ -9,6 +9,7 @@ import datetime
 import numpy as np
 import pandas as pd
 
+from .models.orchestrator import Orchestrator
 import oxn.utils as utils
 from .errors import PrometheusException, JaegerException
 from .models.response import ResponseVariable
@@ -23,6 +24,7 @@ class MetricResponseVariable(ResponseVariable):
 
     def __init__(
             self,
+            orchestrator: Orchestrator,
             name: str,
             experiment_start: float,
             experiment_end: float,
@@ -31,6 +33,8 @@ class MetricResponseVariable(ResponseVariable):
         super().__init__(
             experiment_start=experiment_start, experiment_end=experiment_end
         )
+        self.orchestrator = orchestrator
+        """Orchestrator interface to interact with docker or kubernetes"""
         self.name = name
         """User-defined name of the response variable"""
         self.metric_name = description["metric_name"]
@@ -49,7 +53,7 @@ class MetricResponseVariable(ResponseVariable):
             description["right_window"]
         )
         """Timestamp of the end of the observation period relative to experiment end"""
-        self.prometheus = Prometheus()
+        self.prometheus = Prometheus(orchestrator=self.orchestrator)
         """Prometheus API to fetch metric data represented by this response variable"""
 
     def __repr__(self):
@@ -181,6 +185,7 @@ class MetricResponseVariable(ResponseVariable):
 class TraceResponseVariable(ResponseVariable):
     def __init__(
             self,
+            orchestrator: Orchestrator,
             name: str,
             experiment_start: float,
             experiment_end: float,
@@ -190,6 +195,8 @@ class TraceResponseVariable(ResponseVariable):
             experiment_start=experiment_start,
             experiment_end=experiment_end,
         )
+        self.orchestrator = orchestrator
+        """Orchestrator interface to interact with docker or kubernetes"""
         self.name = name
         """User-defined name of the response variable"""
         self.service_name = description["service_name"]
@@ -204,7 +211,7 @@ class TraceResponseVariable(ResponseVariable):
             description["right_window"]
         )
         """UTC Timestamp of the end of the observation period relative to the experiment end"""
-        self.jaeger = Jaeger()
+        self.jaeger = Jaeger(orchestrator=self.orchestrator)
         """Jaeger API to observe trace data"""
 
     def __repr__(self):

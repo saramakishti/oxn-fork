@@ -304,10 +304,10 @@ class MetricsExportIntervalTreatment(Treatment):
         super().__init__(*args, **kwargs)
         self.original_yaml = None
         # TODO: reuse the existing docker compose client
-        self.compose_client = DockerClient(
+        """ self.compose_client = DockerClient(
             compose_files=[self.config.get("compose_file")]
         )
-        self.docker_client = docker.from_env()
+        self.docker_client = docker.from_env() """
 
     def action(self):
         return "otel_metrics_interval"
@@ -663,7 +663,8 @@ class NetworkDelayTreatment(Treatment):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-        self.client = docker.from_env()
+        #self.client = docker.from_env()
+        self.client = self.orchestrator
 
     action = "delay"
 
@@ -724,11 +725,14 @@ class NetworkDelayTreatment(Treatment):
         }
 
     def preconditions(self) -> bool:
+        super().preconditions()
         """Check if the service has tc installed"""
         service = self.config.get("service_name")
         command = ["tc", "-Version"]
         try:
             assert service
+            # TODO: Branching on orchestrator type is maybe better than abstracting so much away
+            # the kubernetes exec is not working the same way with the status codes as expected from docker
             status_code, _ = self.orchestrator.execute_console_command(service, command)
             logger.info(f"Probed {service} for tc with result {status_code}")
             if status_code > 1 or status_code < 0:
@@ -736,15 +740,20 @@ class NetworkDelayTreatment(Treatment):
                     f"{service} does not have tc installed which is required for {self.treatment_type}. Please install "
                     "package iptables2 in the container"
                 )
-            return status_code == 0
+                return False
+            return True
         except OrchestratorResourceNotFoundException as e:
             self.messages.append(e.message)
             return False
         except OrchestratorException as e:
             self.messages.append(e.message)
             return False
+        except Exception as e:
+            self.messages.append(str(e))
+            return False
 
     def inject(self) -> None:
+        super().inject()
         # required params
         service = self.config.get("service_name")
         interface = self.config.get("interface")
@@ -767,8 +776,9 @@ class NetworkDelayTreatment(Treatment):
             correlation,
         ]
         try:
-            container = self.client.containers.get(container_id=service)
-            container.exec_run(cmd=command)
+            logger.warn("NOOP implementation")
+            #container = self.client.containers.get(container_id=service)
+            #container.exec_run(cmd=command)
             logger.info(
                 f"Injected delay into container {service}. Waiting for {duration}s."
             )
@@ -779,14 +789,16 @@ class NetworkDelayTreatment(Treatment):
             logger.error(f"Docker API returned an error: {e.explanation}")
 
     def clean(self) -> None:
+        super().clean()
         interface = self.config.get("interface") or "eth0"
         service = self.config.get("service_name")
         command = ["tc", "qdisc", "del", "dev", interface, "root", "netem"]
         try:
-            container = self.client.containers.get(container_id=service)
-            container.exec_run(cmd=command)
+            logger.warning("NOOP implementation")
+            #container = self.client.containers.get(container_id=service)
+            #container.exec_run(cmd=command)
             logger.info(f"Cleaned delay treatment from container {service}")
-            self.client.close()
+            #self.client.close()
         except (ContainerNotFound, DockerAPIError) as e:
             logger.error(
                 f"Cannot clean delay treatment from container {service}: {e.explanation}"

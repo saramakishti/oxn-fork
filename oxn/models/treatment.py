@@ -87,6 +87,7 @@ class Treatment(abc.ABC):
 
         :return: A boolean indicating if the preconditions for this treatment are met
         """
+        logger.info(f"Checking preconditions for treatment {self.name}")
 
     @abc.abstractmethod
     def inject(self) -> None:
@@ -96,6 +97,7 @@ class Treatment(abc.ABC):
 
         :return: None
         """
+        logger.info(f"Injecting treatment {self.name}")
 
     @abc.abstractmethod
     def clean(self) -> None:
@@ -103,6 +105,7 @@ class Treatment(abc.ABC):
         Clean any residual effects of the treatment injection.
         :return:
         """
+        logger.info(f"Cleaning treatment {self.name}")
 
     @abc.abstractmethod
     def params(self) -> dict:

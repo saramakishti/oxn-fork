@@ -63,8 +63,10 @@ class KubernetesOrchestrator(Orchestrator):
         logging.info("orchestrate noop implementation")
         pass
 
-    def ready(self, expected_services: List[str] = None, timeout: int = 120) -> bool:
-        return self._check_required_services(self.required_services)
+    def ready(self, expected_services: List[str] | None, timeout: int = 120) -> bool:
+        if expected_services is None:
+            expected_services = self.required_services
+        return self._check_required_services(expected_services)
 
     def teardown(self):
         logging.info("teardown noop implementation")
@@ -147,6 +149,26 @@ class KubernetesOrchestrator(Orchestrator):
             
 
         return 0, "Success"
+    
+    def get_address_for_service(self, label: str) -> str:
+        """
+        Get the address for a service
+
+        Args:
+            service: The service to get the address for
+
+        Returns:
+            The address of the service
+
+        """
+        pods = self.kube_client.list_pod_for_all_namespaces(label_selector=f"app.kubernetes.io/name={label}")
+        if not pods.items:
+            raise OrchestratorResourceNotFoundException(
+                message=f"No pods found for service {label}",
+                explanation="No pods found for the given service",
+            )
+        return pods.items[0].status.pod_ip
+        pass
 
 
 def read_experiment_specification(self):

@@ -8,6 +8,8 @@ import logging
 import requests
 from requests.adapters import Retry, HTTPAdapter
 
+from .models.orchestrator import Orchestrator
+
 from .errors import PrometheusException
 
 logger = logging.getLogger(__name__)
@@ -17,13 +19,16 @@ logger = logging.getLogger(__name__)
 
 
 class Prometheus:
-    def __init__(self):
+    def __init__(self, orchestrator: Orchestrator):
+        assert orchestrator is not None
+        self.orchestrator = orchestrator
         self.session = requests.Session()
         retries = Retry(
             total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504]
         )
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
-        self.base_url = "http://localhost:9090/api/v1/"
+        address = orchestrator.get_address_for_service("prometheus")
+        self.base_url = f"http://{address}:9090/api/v1/"
         self.endpoints = {
             "range_query": "query_range",
             "instant_query": "query",

@@ -13,6 +13,7 @@ from locust import LoadTestShape
 from locust import events
 from locust.env import Environment
 
+from .models.orchestrator import Orchestrator
 import oxn.utils as utils
 
 logger = logging.getLogger(__name__)
@@ -28,7 +29,11 @@ class LoadGenerator:
     and execute the load generation.
     """
 
-    def __init__(self, config=None):
+    def __init__(self, orchestrator: Orchestrator, target_service: str, config=None):
+        assert orchestrator is not None
+        self.orchestrator = orchestrator
+        self.base_address = orchestrator.get_address_for_service(target_service)
+        """A reference to the orchestrator instance"""
         self.config = config
         """The experiment spec"""
         self.locust_tasks: List[LocustTask] = []
@@ -99,7 +104,7 @@ class LoadGenerator:
         class CustomLocust(locust.FastHttpUser):
             # tasks = simple_tasks
             tasks = simple_tasks
-            host = "http://localhost:8080"
+            host = f"http://{self.base_address}:8080"
 
         return CustomLocust
 
@@ -109,7 +114,7 @@ class LoadGenerator:
         class CustomLocust(locust.FastHttpUser):
             # tasks = simple_tasks
             tasks = [self._task_sequence_factory()]
-            host = "http://localhost:8080"
+            host = f"http://{self.base_address}:8080"
 
         return CustomLocust
 

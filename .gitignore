@@ -23,3 +23,4 @@ visibility_reports/*
 evaluation.py
 *.h5
 *.pickle
+kubevpn.exe

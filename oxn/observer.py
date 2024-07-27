@@ -8,6 +8,8 @@ import logging
 from typing import Optional
 from operator import attrgetter
 
+from .models.orchestrator import Orchestrator
+
 
 from .responses import MetricResponseVariable, TraceResponseVariable
 from .models.response import ResponseVariable
@@ -24,10 +26,14 @@ class Observer:
 
     def __init__(
         self,
+        orchestrator: Orchestrator,
         config: Optional[dict],
         experiment_start: Optional[float] = None,
         experiment_end: Optional[float] = None,
     ):
+        assert orchestrator is not None
+        self.orchestrator = orchestrator
+        """The orchestrator instance"""
         self.config = config
         """The experiment specification"""
         self.experiment_start = experiment_start
@@ -39,6 +45,7 @@ class Observer:
 
     def _initialize_metric_variable(self, response_name, response_description) -> None:
         response_variable = MetricResponseVariable(
+            orchestrator=self.orchestrator,
             name=response_name,
             description=response_description,
             experiment_start=self.experiment_start,
@@ -49,6 +56,7 @@ class Observer:
     def _initialize_trace_variable(self, response_name, response_description) -> None:
         """Initialize a trace variable from a response description"""
         response_variable = TraceResponseVariable(
+            orchestrator=self.orchestrator,
             name=response_name,
             description=response_description,
             experiment_start=self.experiment_start,

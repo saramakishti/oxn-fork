@@ -10,6 +10,8 @@ import requests
 from requests.adapters import HTTPAdapter, Retry
 import logging
 
+from .models.orchestrator import Orchestrator
+
 from .errors import JaegerException
 
 LOGGER = logging.getLogger(__name__)
@@ -24,7 +26,9 @@ class Jaeger:
     Wrapper around the undocumented Jaeger HTTP API.
     """
 
-    def __init__(self):
+    def __init__(self, orchestrator: Orchestrator, jaeger_service_name: str = "jaeger"):
+        assert orchestrator is not None
+        self.orchestrator = orchestrator
         self.session = requests.Session()
         retries = Retry(
             total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504]
@@ -32,7 +36,9 @@ class Jaeger:
         """Retry policy. Force retries on server errors"""
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
         """Mount the retry adapter"""
-        self.base_url = "http://localhost:8080/jaeger/ui/api/"
+        address = orchestrator.get_address_for_service(jaeger_service_name)
+        assert address is not None
+        self.base_url = f"http://{address}:8080/jaeger/ui/api/"
         """Jaeger base url"""
         self.endpoints = {
             "traces": "traces",

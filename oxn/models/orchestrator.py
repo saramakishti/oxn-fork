@@ -45,3 +45,17 @@ class Orchestrator(ABC):
 
         """
         pass
+
+    @abstractmethod
+    def get_address_for_service(self, service: str) -> str:
+        """
+        Get the address for a service
+
+        Args:
+            service: The service to get the address for
+
+        Returns:
+            The address of the service
+
+        """
+        pass

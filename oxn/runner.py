@@ -92,7 +92,7 @@ class ExperimentRunner:
             additional_treatments if additional_treatments else []
         )
         """Additional user-supplied treatments"""
-        self.observer = Observer(config=self.config)
+        self.observer = Observer(orchestrator=self.orchestrator, config=self.config)
         """Observer for response variables"""
         self.accountant = None
         if accountant_names:

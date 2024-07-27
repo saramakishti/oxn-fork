@@ -83,14 +83,14 @@ class Engine:
         accounting=False,
     ):
         """Run an experiment n times"""
-
+        assert runs is not None, "Number of runs must be specified"
         logger.info(f"Running experiment {self.config} for {runs} times")
         for idx in range(runs):
             logger.info(f"Experiment run {idx + 1} of {runs}")
             self.orchestrator = KubernetesOrchestrator(
                 experiment_config=self.spec,
             )
-            self.generator = LoadGenerator(config=self.spec)
+            self.generator = LoadGenerator(orchestrator=self.orchestrator, target_service="prometheus", config=self.spec)
             names = []
             """ (
                 self.orchestrator.translate_compose_names(
@@ -109,7 +109,7 @@ class Engine:
             )
             self.runner.execute_compile_time_treatments()
             self.orchestrator.orchestrate()
-            if not self.orchestrator.ready(timeout=orchestration_timeout):
+            if not self.orchestrator.ready(expected_services=None, timeout=orchestration_timeout):
                 self.runner.clean_compile_time_treatments()
                 self.orchestrator.teardown()
                 raise OrchestrationException(
