@@ -32,11 +32,12 @@ class Orchestrator(ABC):
         pass
 
     @abstractmethod
-    def execute_console_command(self, service: str, command: str) -> Tuple[int, str]:
+    def execute_console_command(self, service: str, command: List[str]) -> Tuple[int, str]:
         """
         Execute a console command on the orchestrator
 
         Args:
+            service: The service to execute the command on
             command: The command to execute
 
         Returns:

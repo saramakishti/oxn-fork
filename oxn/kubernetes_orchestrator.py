@@ -9,11 +9,12 @@ import logging
 from typing import Optional, List, Tuple
 from click import File
 from kubernetes import client, config
+from kubernetes.stream import stream
 from kubernetes.client.exceptions import ApiException
 
 from oxn.models.orchestrator import Orchestrator  # Import the abstract base class
 
-from .errors import OxnException
+from .errors import OxnException, OrchestratorException, OrchestratorResourceNotFoundException
 
 class KubernetesOrchestrator(Orchestrator):
     def __init__(self, experiment_config=None):
@@ -80,9 +81,72 @@ class KubernetesOrchestrator(Orchestrator):
     def running_services(self) -> List[str]:
         return self.list_of_all_services.items
 
-    def execute_console_command(self, service: str, command: str) -> Tuple[int, str]:
-        logging.info("execute_console_command noop implementation for service %s with command %s", service, command)
-        return -1, "noop"
+    """
+    Get all pods for a given service and execute a command on them and aggregate the results
+    If the command fails on any pod, the function will return the error code and the error message
+    """
+    def execute_console_command(self, label: str, command: List[str]) -> Tuple[int, str]:
+        """
+        Execute a console command via the kubernetes orchestrator on pods with a given label
+
+        Args:
+            label: The name of the pods as specified in app.kubernetes.io/name=<label>
+            command: The command to execute
+
+        Returns:
+            A tuple of the return code and the output of the command
+
+        Throws:
+            OrchestratorResourceNotFoundException: If no pods are found for the given label
+            OrchestratorException: If an error occurs while executing the command
+        
+        """
+        #logging.info("execute_console_command noop implementation for service %s with command %s", service, command)
+
+        # Get all pods with label app.kubernetes.io/name=service
+        pods = self.kube_client.list_pod_for_all_namespaces(label_selector=f"app.kubernetes.io/name={label}")
+
+        if not pods.items:
+            raise OrchestratorResourceNotFoundException(
+                message=f"No pods found for service {label}",
+                explanation="No pods found for the given service",
+            )
+        
+        # Execute the command on each pod
+        for pod in pods.items:
+            try:
+                exec_command = command
+                assert pod.metadata.annotations['kubectl.kubernetes.io/default-container']
+
+                wrapped_command = ['sh', '-c', f"{' '.join(exec_command)}; echo $?"]
+    
+                response = stream(self.kube_client.connect_get_namespaced_pod_exec,
+                                name=pod.metadata.name,
+                                namespace=pod.metadata.namespace,
+                                command=wrapped_command,
+                                container=pod.metadata.annotations.get('kubectl.kubernetes.io/default-container', None),
+                                stderr=True,
+                                stdin=False,
+                                stdout=True,
+                                tty=False)
+                
+                # Split the response to separate the command output and exit status
+                response_lines = response.split('\n')
+                exit_status_line = response_lines[-2].strip()
+                exit_status = int(exit_status_line)
+                command_output = '\n'.join(response_lines[:-2])
+                
+                return exit_status, command_output
+                
+                logging.info(response)
+            except ApiException as e:
+                raise OrchestratorException(
+                    message=f"Error while executing command {command} on pod {pod.metadata.name} in namespace {label}: {e.body}",
+                    explanation=str(e),
+                )
+            
+
+        return 0, "Success"
 
 
 def read_experiment_specification(self):

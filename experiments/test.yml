@@ -11,7 +11,7 @@ experiment:
     - delay_treatment:
         action: delay
         params: {
-          service_name: recommendation-service,
+          service_name: node-exporter,
           delay_time: 45ms,
           delay_jitter: 45ms,
           duration: 120s,

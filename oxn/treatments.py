@@ -19,6 +19,7 @@ from docker.errors import APIError as DockerAPIError
 
 from python_on_whales import DockerClient
 
+from .errors import OrchestratorException, OxnException, OrchestratorResourceNotFoundException
 from oxn.utils import (
     time_string_to_seconds,
     validate_time_string,
@@ -727,23 +728,20 @@ class NetworkDelayTreatment(Treatment):
         service = self.config.get("service_name")
         command = ["tc", "-Version"]
         try:
-            #self.orchestrator.execute_console_command(service, command)
-            #container = self.client.containers.get(container_id=service)
-            #status_code, _ = container.exec_run(cmd=command)
+            assert service
             status_code, _ = self.orchestrator.execute_console_command(service, command)
-            logger.info(f"Probed container {service} for tc with result {status_code}")
-            if not status_code == 0:
+            logger.info(f"Probed {service} for tc with result {status_code}")
+            if status_code > 1 or status_code < 0:
                 self.messages.append(
-                    f"Container {service} does not have tc installed which is required for {self.treatment_type}. Please install "
+                    f"{service} does not have tc installed which is required for {self.treatment_type}. Please install "
                     "package iptables2 in the container"
                 )
             return status_code == 0
-
-        except ContainerNotFound:
-            self.messages.append(f"Can't find container {service}")
+        except OrchestratorResourceNotFoundException as e:
+            self.messages.append(e.message)
             return False
-        except DockerAPIError as e:
-            self.messages.append(f"Can't talk to the Docker API: {e.explanation}")
+        except OrchestratorException as e:
+            self.messages.append(e.message)
             return False
 
     def inject(self) -> None:

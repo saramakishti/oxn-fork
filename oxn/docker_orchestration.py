@@ -8,7 +8,7 @@ import logging
 import os
 import time
 from pathlib import Path
-from typing import Optional, List
+from typing import Optional, List, Tuple
 
 import docker.errors
 import python_on_whales
