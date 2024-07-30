@@ -231,3 +231,7 @@ class DockerComposeOrchestrator(Orchestrator):
         #status_code, _ = container.exec_run(cmd=command)
         logging.info("execute_console_command noop implementation for service %s with command %s", service, command)
         return -1, "noop"
+
+    def get_address_for_service(self, service: str) -> str:
+        raise NotImplementedError
+

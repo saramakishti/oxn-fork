@@ -150,25 +150,54 @@ class KubernetesOrchestrator(Orchestrator):
 
         return 0, "Success"
     
-    def get_address_for_service(self, label: str) -> str:
+    def get_address_for_service(self, label_selector: str, label: str, namespace: str) -> str:
         """
         Get the address for a service
 
         Args:
-            service: The service to get the address for
+            label_selector: The label selector for the service
+            label: The label of the service
+            namespace: The namespace of the service
 
         Returns:
             The address of the service
 
         """
-        pods = self.kube_client.list_pod_for_all_namespaces(label_selector=f"app.kubernetes.io/name={label}")
+        pods = self.kube_client.list_namespaced_pod(namespace, label_selector=f"{label_selector}={label}")
         if not pods.items:
             raise OrchestratorResourceNotFoundException(
                 message=f"No pods found for service {label}",
                 explanation="No pods found for the given service",
             )
         return pods.items[0].status.pod_ip
-        pass
+    
+    def get_jaeger_address(self) -> str:
+        """
+        Get the address of the Jaeger service
+
+        Returns:
+            The address of the Jaeger service
+
+        """
+        return self.get_address_for_service(
+            label_selector="app.kubernetes.io/name",
+            label="jaeger",
+            namespace="default",
+        )
+    
+    def get_prometheus_address(self) -> str:
+        """
+        Get the address of the Prometheus service
+
+        Returns:
+            The address of the Prometheus service
+
+        """
+        return self.get_address_for_service(
+            label_selector="app.kubernetes.io/name",
+            label="prometheus",
+            namespace="default",
+        )
 
 
 def read_experiment_specification(self):

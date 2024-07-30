@@ -8,6 +8,8 @@ from typing import Set, List
 
 import schema
 
+from .models import orchestrator
+
 from .errors import OxnException
 from .jaeger import Jaeger
 from .prometheus import Prometheus
@@ -184,6 +186,20 @@ trace_response_schema = {
 syntactic_schema = schema.Schema(
     {
         "experiment": {
+            "version": str,
+            "orchestrator": str,
+            schema.Optional("pods"): {
+                "jaeger": {
+                    "laben_selector": str,
+                    "label": str,
+                    "namespace": str,
+                },
+                "prometheus": {
+                    "laben_selector": str,
+                    "label": str,
+                    "namespace": str,
+                }
+            },
             "responses": [
                 schema.Or(metric_response_schema, trace_response_schema),
             ],

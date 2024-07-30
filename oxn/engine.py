@@ -31,12 +31,14 @@ class Engine:
     """
 
     def __init__(self, configuration_path=None, report_path=None, treatment_file=None):
+        assert configuration_path is not None, "Configuration path must be specified"
         self.config = configuration_path
         """The path to the configuration file for this engine"""
         self.spec = None
         """The loaded experiment specification"""
         self.report_path = report_path
         """The path to write the experiment report to"""
+        assert report_path is not None, "Report path must be specified"
         self.reporter = Reporter(report_path=report_path)
         """A reference to a reporter instance"""
         self.context = Context(treatment_file_path=treatment_file)
@@ -87,9 +89,22 @@ class Engine:
         logger.info(f"Running experiment {self.config} for {runs} times")
         for idx in range(runs):
             logger.info(f"Experiment run {idx + 1} of {runs}")
-            self.orchestrator = KubernetesOrchestrator(
-                experiment_config=self.spec,
-            )
+            assert self.spec
+            assert self.spec["experiment"]
+            assert self.spec["experiment"]["orchestrator"]
+            if self.spec["experiment"]["orchestrator"] == "docker-compose":
+                self.orchestrator = DockerComposeOrchestrator(
+                    experiment_config=self.spec,
+                )
+            elif self.spec["experiment"]["orchestrator"] == "kubernetes": 
+                self.orchestrator = KubernetesOrchestrator(
+                    experiment_config=self.spec,
+                )
+            else:
+                raise OxnException(
+                    message="Unknown orchestrator",
+                    explanation=f"Orchestrator {self.spec['experiment']['orchestrator']} is not supported",
+                )
             self.generator = LoadGenerator(orchestrator=self.orchestrator, target_service="prometheus", config=self.spec)
             names = []
             """ (

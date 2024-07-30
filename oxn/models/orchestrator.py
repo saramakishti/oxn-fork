@@ -59,3 +59,25 @@ class Orchestrator(ABC):
 
         """
         pass
+
+    @abstractmethod
+    def get_prometheus_address(self) -> str:
+        """
+        Get the address for the Prometheus service
+
+        Returns:
+            The address of the Prometheus service
+
+        """
+        pass
+
+    @abstractmethod
+    def get_jaeger_address(self) -> str:
+        """
+        Get the address for the Jaeger service
+
+        Returns:
+            The address of the Jaeger service
+
+        """
+        pass

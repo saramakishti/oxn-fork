@@ -36,7 +36,7 @@ class Jaeger:
         """Retry policy. Force retries on server errors"""
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
         """Mount the retry adapter"""
-        address = orchestrator.get_address_for_service(jaeger_service_name)
+        address = orchestrator.get_jaeger_address()
         assert address is not None
         self.base_url = f"http://{address}:8080/jaeger/ui/api/"
         """Jaeger base url"""
@@ -52,6 +52,11 @@ class Jaeger:
     def get_services(self) -> Union[list, None]:
         """Returns a list of all services"""
         endpoint = self.endpoints.get("services")
+        if endpoint is None:
+            raise JaegerException(
+                message="Invalid Jaeger endpoint",
+                explanation="The services endpoint is invalid",
+            )
         url = self.base_url + endpoint
         try:
             response = self.session.get(
@@ -82,7 +87,13 @@ class Jaeger:
         service_name="adservice",
     ) -> Optional[dict]:
         """Search Jaeger traces"""
-        endpoint = self.base_url + self.endpoints.get("traces")
+        traces = self.endpoints.get("traces")
+        if traces is None:
+            raise JaegerException(
+                message="Invalid Jaeger endpoint",
+                explanation="The traces endpoint is invalid",
+            )
+        endpoint = self.base_url + traces
         params = {
             "start": start,
             "end": end,
@@ -104,7 +115,13 @@ class Jaeger:
 
     def get_service_operations(self, service="adservice") -> [dict, None]:
         """Get all service operations for a given service from Jaeger"""
-        endpoint = self.base_url + self.endpoints.get("operations")
+        operations = self.endpoints.get("operations")
+        if operations is None:
+            raise JaegerException(
+                message="Invalid Jaeger endpoint",
+                explanation="The operations endpoint is invalid",
+            )
+        endpoint = self.base_url + operations
         endpoint = endpoint % service
         try:
             response = self.session.get(endpoint)
@@ -118,7 +135,13 @@ class Jaeger:
 
     def get_dependencies(self, end_timestamp=None, lookback=604800000) -> [dict, None]:
         """Get a dependency graph from Jaeger"""
-        endpoint = self.base_url + self.endpoints.get("dependencies")
+        dependencies = self.endpoints.get("dependencies")
+        if dependencies is None:
+            raise JaegerException(
+                message="Invalid Jaeger endpoint",
+                explanation="The dependencies endpoint is invalid",
+            )
+        endpoint = self.base_url + dependencies
         params = {"endTs": end_timestamp, "lookback": lookback}
         try:
             response = self.session.get(endpoint, params=params)
@@ -132,7 +155,13 @@ class Jaeger:
 
     def get_trace_by_id(self, trace_id) -> [dict, None]:
         """Get a single Jaeger trace by a trace id"""
-        endpoint = self.base_url + self.endpoints.get("trace") % trace_id
+        trace = self.endpoints.get("trace")
+        if trace is None:
+            raise JaegerException(
+                message="Invalid Jaeger endpoint",
+                explanation="The trace endpoint is invalid",
+            )
+        endpoint = self.base_url + trace % trace_id
         try:
             response = self.session.get(endpoint)
             response.raise_for_status()

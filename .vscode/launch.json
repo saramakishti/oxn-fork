@@ -22,7 +22,8 @@
                 "GEVENT_SUPPORT": "True"
             },
             "args": [
-                "experiments/test.yml"
+                "experiments/test.yml",
+                "--report", "reports/test.yml"
             ],
             "console": "integratedTerminal",
         }

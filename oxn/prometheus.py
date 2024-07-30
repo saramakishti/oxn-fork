@@ -27,7 +27,7 @@ class Prometheus:
             total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504]
         )
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
-        address = orchestrator.get_address_for_service("prometheus")
+        address = orchestrator.get_prometheus_address()
         self.base_url = f"http://{address}:9090/api/v1/"
         self.endpoints = {
             "range_query": "query_range",
@@ -66,7 +66,13 @@ class Prometheus:
             "metric": metric,
             "limit": limit,
         }
-        url = self.base_url + self.endpoints.get("target_metadata")
+        target_metadata = self.endpoints.get("target_metadata")
+        if target_metadata is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for target_metadata",
+                explanation="No target target_metadata endpoint returned",
+            )
+        url = self.base_url + target_metadata
         try:
             response = self.session.get(url=url, params=params)
             response.raise_for_status()
@@ -79,7 +85,13 @@ class Prometheus:
 
     def targets(self):
         """Return an overview of the current state of Prometheus target discovery"""
-        url = self.base_url + self.endpoints.get("targets")
+        target = self.endpoints.get("targets")
+        if target is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for targets",
+                explanation="No target targets endpoint returned",
+            )
+        url = self.base_url + target
         try:
             response = self.session.get(url=url)
             response.raise_for_status()
@@ -97,10 +109,16 @@ class Prometheus:
             "end": end,
             "match": match,
         }
-        url = self.base_url + self.endpoints.get("labels")
+        labels = self.endpoints.get("labels")
+        if labels is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for labels",
+                explanation="No target labels endpoint returned",
+            )
+        url = self.base_url + labels
         try:
             response = self.session.get(
-                self.base_url + self.endpoints.get("labels"), params=params
+                url, params=params
             )
             response.raise_for_status()
             return response.json()
@@ -111,7 +129,13 @@ class Prometheus:
             )
 
     def metrics(self):
-        url = self.base_url + self.endpoints.get("metrics")
+        metrics = self.endpoints.get("metrics")
+        if metrics is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for metrics",
+                explanation="No target metrics endpoint returned",
+            )
+        url = self.base_url + metrics
         try:
             response = self.session.get(url=url)
             response.raise_for_status()
@@ -123,7 +147,13 @@ class Prometheus:
             )
 
     def label_values(self, label=None, start=None, end=None, match=None):
-        endpoint = self.endpoints.get("label_values") % label
+        label_values = self.endpoints.get("label_values")
+        if label_values is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for label_values",
+                explanation="No target label_values endpoint returned",
+            )
+        endpoint = label_values % label
         url = self.base_url + endpoint
 
         params = {
@@ -142,7 +172,13 @@ class Prometheus:
             )
 
     def metric_metadata(self, metric=None, limit=None):
-        url = self.base_url + self.endpoints.get("metric_metadata")
+        metric_metadata = self.endpoints.get("metric_metadata")
+        if metric_metadata is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for metric_metadata",
+                explanation="No target metric_metadata endpoint returned",
+            )
+        url = self.base_url + metric_metadata
         params = {
             "metric": metric,
             "limit": limit,
@@ -158,7 +194,13 @@ class Prometheus:
             )
 
     def config(self):
-        url = self.base_url + self.endpoints.get("config")
+        config = self.endpoints.get("config")
+        if config is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for config",
+                explanation="No target config endpoint returned",
+            )
+        url = self.base_url + config
         try:
             response = self.session.get(url=url)
             response.raise_for_status()
@@ -170,7 +212,13 @@ class Prometheus:
             )
 
     def flags(self):
-        url = self.base_url + self.endpoints.get("flags")
+        flags = self.endpoints.get("flags")
+        if flags is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for flags",
+                explanation="No target flags endpoint returned",
+            )
+        url = self.base_url + flags
         try:
             response = self.session.get(url=url)
             response.raise_for_status()
@@ -183,7 +231,13 @@ class Prometheus:
 
     def instant_query(self, query, time=None, timeout=None):
         """Evaluate a Prometheus query instantly"""
-        url = self.base_url + self.endpoints.get("instant_query")
+        instant_query = self.endpoints.get("instant_query")
+        if instant_query is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for instant_query",
+                explanation="No target instant_query endpoint returned",
+            )
+        url = self.base_url + instant_query
         params = {
             "query": query,
             "time": time,
@@ -201,7 +255,13 @@ class Prometheus:
 
     def range_query(self, query, start, end, step=None, timeout=None):
         """Evaluate a Prometheus query over a time range"""
-        url = self.base_url + self.endpoints.get("range_query")
+        range_query = self.endpoints.get("range_query")
+        if range_query is None:
+            raise PrometheusException(
+                message="Error while getting endpoint for range_query",
+                explanation="No target range_query endpoint returned",
+            )
+        url = self.base_url + range_query
         params = {
             "query": query,
             "start": start,

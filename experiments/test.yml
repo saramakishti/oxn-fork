@@ -1,11 +1,22 @@
 # inject a packet delay of 0-90ms while increasing the otel metric inverval to 1s
 experiment:
+  version: 0.0.1
+  orchestrator: kubernetes
+  pods:
+    jaeger: 
+      laben_selector: app.kubernetes.io/name,
+      label: jaeger,
+      namespace: default,
+    prometheus:
+      laben_selector: app.kubernetes.io/name,
+      label: prometheus,
+      namespace: default,
   responses:
     - recommendations_total:
         type: metric
         metric_name: increase(app_recommendations_counter_total[90s])
-        left_window: 10s
-        right_window: 10s
+        left_window: 60s
+        right_window: 60s
         step: 1
   treatments:
     - delay_treatment:
