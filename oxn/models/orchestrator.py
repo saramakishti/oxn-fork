@@ -81,3 +81,14 @@ class Orchestrator(ABC):
 
         """
         pass
+
+    @abstractmethod
+    def get_orchestrator_type(self) -> str:
+        """
+        Get the orchestrator type
+
+        Returns:
+            The orchestrator type
+
+        """
+        pass

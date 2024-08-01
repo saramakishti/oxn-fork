@@ -32,7 +32,7 @@ class LoadGenerator:
     def __init__(self, orchestrator: Orchestrator, target_service: str, config=None):
         assert orchestrator is not None
         self.orchestrator = orchestrator
-        self.base_address = orchestrator.get_address_for_service(target_service)
+        self.base_address = "localhost"
         """A reference to the orchestrator instance"""
         self.config = config
         """The experiment spec"""

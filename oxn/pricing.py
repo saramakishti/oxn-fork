@@ -82,7 +82,7 @@ class Accountant:
     def read_all_containers(self):
         """Read docker stats for all containers"""
         for container in self.containers():
-            if container.name in self.container_names:
+            if container.name and self.container_names and container.name in self.container_names:
                 self.read_container_stats(
                     container_name=container.name,
                     container_id=container.id,

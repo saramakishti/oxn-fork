@@ -234,4 +234,13 @@ class DockerComposeOrchestrator(Orchestrator):
 
     def get_address_for_service(self, service: str) -> str:
         raise NotImplementedError
+    
+    def get_prometheus_address(self) -> str:
+        raise NotImplementedError
+    
+    def get_grafana_address(self) -> str:
+        raise NotImplementedError
+    
+    def get_orchestrator_type(self) -> str:
+        return "docker-compose"
 

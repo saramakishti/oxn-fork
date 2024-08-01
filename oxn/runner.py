@@ -18,6 +18,8 @@ import docker
 
 from .errors import OxnException
 from .treatments import (
+    EmptyDockerComposeTreatment,
+    EmptyKubernetesTreatment,
     EmptyTreatment,
     NetworkDelayTreatment,
     PauseTreatment,
@@ -56,6 +58,8 @@ class ExperimentRunner:
         "pause": PauseTreatment,
         "loss": PacketLossTreatment,
         "empty": EmptyTreatment,
+        "empty_kubernetes": EmptyKubernetesTreatment,
+        "empty_docker_compose": EmptyDockerComposeTreatment,
         "delay": NetworkDelayTreatment,
         "stress": StressTreatment,
         "sampling": PrometheusIntervalTreatment,
@@ -153,6 +157,7 @@ class ExperimentRunner:
                 action=action, params=params, name=key, orchestrator=self.orchestrator
             )
             logger.debug("Successfully built treatment %s", self.treatments[key])
+        logger.info("Built %s treatments: %s", len(self.treatments), self.treatments.keys())
 
     def _build_treatment(self, action, params, name, orchestrator) -> Treatment:
         """Build a single treatment from a description"""

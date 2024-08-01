@@ -198,6 +198,16 @@ class KubernetesOrchestrator(Orchestrator):
             label="prometheus",
             namespace="default",
         )
+    
+    def get_orchestrator_type(self) -> str:
+        """
+        Get the orchestrator type
+
+        Returns:
+            The orchestrator type
+
+        """
+        return "kubernetes"
 
 
 def read_experiment_specification(self):

@@ -41,6 +41,13 @@ class Treatment(abc.ABC):
                 message=f"Invalid configuration for {self.__repr__()} provided.",
                 explanation="\n".join(self.messages),
             )
+        
+        orchestrator_validates = self._validate_orchestrator()
+        if not orchestrator_validates:
+            raise OxnException(
+                message=f"Invalid orchestrator for {self.__repr__()} provided.",
+                explanation="\n".join(self.messages),
+            )
 
         self._transform_params()
         """Populate the treatment with any additional values depending on user-supplied parameters"""
@@ -147,3 +154,11 @@ class Treatment(abc.ABC):
         :return: bool
         """
         return True
+
+    @abc.abstractmethod
+    def _validate_orchestrator(self) -> bool:
+        """
+        Validate if the orchestrator is suitable for this treatment.
+        This method should return true if the orchestrator is valid, false otherwise.
+        """
+        return False

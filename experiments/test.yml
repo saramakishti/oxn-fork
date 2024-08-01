@@ -28,6 +28,11 @@ experiment:
           duration: 10s,
           interface: eth0,
         }
+    - empty_k8s:
+        action: empty_kubernetes
+        params: {
+          duration: 10s,
+        }
     - interval:
         action: otel_metrics_interval
         params: {
@@ -41,7 +46,7 @@ experiment:
     required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}] # {namespace: monitoring, name: not-running-service}
     #required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}]
   loadgen:
-    run_time: 10m
+    run_time: 1m
     stages: 
     - {duration: 20, users: 50, spawn_rate: 25}
     tasks:
