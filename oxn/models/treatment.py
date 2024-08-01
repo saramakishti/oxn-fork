@@ -5,6 +5,7 @@ Connection: Used as a base class for specific treatment implementations in treat
  """
 
 import abc
+from typing import List
 import logging
 import uuid
 
@@ -156,9 +157,9 @@ class Treatment(abc.ABC):
         return True
 
     @abc.abstractmethod
-    def _validate_orchestrator(self) -> bool:
+    def _validate_orchestrator(self, valid_for: List[str]) -> bool:
         """
         Validate if the orchestrator is suitable for this treatment.
         This method should return true if the orchestrator is valid, false otherwise.
         """
-        return False
+        return self.orchestrator.get_orchestrator_type() in valid_for

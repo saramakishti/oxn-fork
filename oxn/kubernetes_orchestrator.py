@@ -11,6 +11,7 @@ from click import File
 from kubernetes import client, config
 from kubernetes.stream import stream
 from kubernetes.client.exceptions import ApiException
+from kubernetes.client.models.v1_deployment import V1Deployment
 
 from oxn.models.orchestrator import Orchestrator  # Import the abstract base class
 
@@ -25,6 +26,7 @@ class KubernetesOrchestrator(Orchestrator):
         self.experiment_config: dict = experiment_config
         config.load_kube_config()
         self.kube_client = client.CoreV1Api()
+        self.api_client = client.AppsV1Api()
 
         logging.info("Loading all running resources in k8s cluster")
         
@@ -208,42 +210,47 @@ class KubernetesOrchestrator(Orchestrator):
 
         """
         return "kubernetes"
-
-
-def read_experiment_specification(self):
-    """Read the experiment specification file and confirm that its valid yaml"""
-
     
-    
-    with open("C:\\Users\\Roschy\\Documents\\Masterarbeit\\oxn\\experiments\\test.yml", "r") as fp:
-        contents = fp.read()
-        try:
-            spec = yaml.safe_load(contents)
-        except yaml.YAMLError as e:
-            raise OxnException(
-                message="Provided experiment spec is not valid YAML",
-                explanation=str(e),
+
+    def get_deployment(self, namespace, label_selector, label) -> V1Deployment:
+        """
+        Get the deployment for a service
+
+        Args:
+            namespace: The namespace of the service
+            label_selector: The label selector for the service
+            label: The label of the service
+
+        Returns:
+            The deployment of the service
+
+        """
+        deployments = self.api_client.list_namespaced_deployment(namespace, label_selector=f"{label_selector}={label}")
+        if not deployments.items:
+            raise OrchestratorResourceNotFoundException(
+                message=f"No deployments found for service {label}",
+                explanation="No deployments found for the given service",
             )
-        return spec
-
-def main():
-    FORMAT = "%(levelname)s: %(asctime)s [%(filename)s:%(lineno)s - %(funcName)10s() ] %(message)s"
-    logging.basicConfig(level=logging.INFO, format=FORMAT)
-
-
-    """Load the experiments config file"""
-    experiment_config = read_experiment_specification("experiments/test.yaml")
-    logging.info("Experiment configuration loaded")
-    logging.info(experiment_config)
-
-    logging.info("Check for expected services")
-    try:
-        orchestrator = KubernetesOrchestrator(experiment_config)
-    except OxnException as e:
-        logging.error(e.message)
-        logging.debug(e.explanation)
-    pass
+        if len(deployments.items) > 1:
+            raise OrchestratorException(
+                message=f"Multiple deployments found for service {label}",
+                explanation="Multiple deployments found for the given service",
+            )
+        return deployments.items[0]
     
-    
+    def scale_deployment(self, deployment: V1Deployment, replicas: int):
+        """
+        Scale a deployment
 
-  
+        Args:
+            deployment: The deployment to scale
+            replicas: The number of replicas
+
+        """
+        deployment.spec.replicas = replicas
+        response = self.api_client.patch_namespaced_deployment_scale(
+            name=deployment.metadata.name,
+            namespace=deployment.metadata.namespace,
+            body=deployment,
+        )
+        return response

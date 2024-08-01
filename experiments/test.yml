@@ -4,11 +4,11 @@ experiment:
   orchestrator: kubernetes
   pods:
     jaeger: 
-      laben_selector: app.kubernetes.io/name,
+      label_selector: app.kubernetes.io/name,
       label: jaeger,
       namespace: default,
     prometheus:
-      laben_selector: app.kubernetes.io/name,
+      label_selector: app.kubernetes.io/name,
       label: prometheus,
       namespace: default,
   responses:
@@ -19,6 +19,14 @@ experiment:
         right_window: 60s
         step: 1
   treatments:
+    - stop_loadgen_deployment:
+        action: scale_deployment
+        params: {
+          namespace: default,
+          label_selector:  app.kubernetes.io/component,
+          label: loadgenerator,
+          scale_to: 0,
+        }
     - delay_treatment:
         action: delay
         params: {

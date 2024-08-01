@@ -18,6 +18,7 @@ import docker
 
 from .errors import OxnException
 from .treatments import (
+    DeploymentScaleTreatment,
     EmptyDockerComposeTreatment,
     EmptyKubernetesTreatment,
     EmptyTreatment,
@@ -66,6 +67,7 @@ class ExperimentRunner:
         "tail": TailSamplingTreatment,
         "probl": ProbabilisticSamplingTreatment,
         "otel_metrics_interval": MetricsExportIntervalTreatment,
+        "scale_deployment": DeploymentScaleTreatment,
     }
 
     def __init__(

@@ -190,12 +190,12 @@ syntactic_schema = schema.Schema(
             "orchestrator": str,
             schema.Optional("pods"): {
                 "jaeger": {
-                    "laben_selector": str,
+                    "label_selector": str,
                     "label": str,
                     "namespace": str,
                 },
                 "prometheus": {
-                    "laben_selector": str,
+                    "label_selector": str,
                     "label": str,
                     "namespace": str,
                 }
