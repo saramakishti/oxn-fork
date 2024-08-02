@@ -4,6 +4,7 @@ Functionality: Collects and formats interaction data between treatments and resp
 Connection: Called by main.py and Engine to compile and save experiment results.
 
 Handle the generation of experiment reports"""
+import datetime
 import uuid
 from typing import Tuple, Union
 
@@ -28,6 +29,7 @@ class Reporter:
     ):
         self.report_data = {"report": {"runs": {}}}
         self.report_path = report_path
+        self.report_file_name = f"report_{datetime.datetime.now().strftime('%Y-%m-%d_%H-%M-%S')}.yaml"
         self.interactions = []
 
     @staticmethod
@@ -221,6 +223,7 @@ class Reporter:
             }
 
     def dump_report_data(self):
-        with open(self.report_path, "w+") as fp:
+        # report name has current time in it
+        with open(self.report_path + self.report_file_name , "w+") as fp:
             contents = yaml.dump(self.report_data, sort_keys=False)
             fp.write(contents)
