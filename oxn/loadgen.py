@@ -13,6 +13,8 @@ from locust import LoadTestShape
 from locust import events
 from locust.env import Environment
 
+from oxn.kubernetes_orchestrator import KubernetesOrchestrator
+
 from .models.orchestrator import Orchestrator
 import oxn.utils as utils
 
@@ -29,11 +31,11 @@ class LoadGenerator:
     and execute the load generation.
     """
 
-    def __init__(self, orchestrator: Orchestrator, target_service: str, config=None):
+    def __init__(self, orchestrator: Orchestrator, target_service: str, config: dict):
         assert orchestrator is not None
         self.orchestrator = orchestrator
-        self.base_address = "localhost"
         """A reference to the orchestrator instance"""
+        assert config is not None
         self.config = config
         """The experiment spec"""
         self.locust_tasks: List[LocustTask] = []
@@ -49,12 +51,23 @@ class LoadGenerator:
 
     def _read_config(self):
         """Read the load generation section of an experiment specification"""
-        loadgen_section = self.config["experiment"]["loadgen"]
+        loadgen_section: dict = self.config["experiment"]["loadgen"]
         self.stages = loadgen_section.get("stages", None)
         self.run_time = utils.time_string_to_seconds(loadgen_section["run_time"])
         self.locust_tasks = [
             LocustTask(**task_dict) for task_dict in loadgen_section["tasks"]
         ]
+        self.target = loadgen_section.get("target")
+        
+        self.base_address = "localhost"
+        self.port = 8080
+        
+        if self.target:
+            assert isinstance(self.orchestrator, KubernetesOrchestrator), "Orchestrator must be KubernetesOrchestrator if target is specified"
+            self.base_address = self.orchestrator.get_address_for_service(self.target["label_selector"], self.target["label"], self.target["namespace"])
+            self.port = self.target["port"]
+            
+        logger.info(f"Base address for load generation set to {self.base_address}:{self.port}")
 
         sequential = loadgen_section.get("sequential", False)
         if not sequential:
@@ -104,7 +117,7 @@ class LoadGenerator:
         class CustomLocust(locust.FastHttpUser):
             # tasks = simple_tasks
             tasks = simple_tasks
-            host = f"http://{self.base_address}:8080"
+            host = f"http://{self.base_address}:{self.port}"
 
         return CustomLocust
 
@@ -114,7 +127,7 @@ class LoadGenerator:
         class CustomLocust(locust.FastHttpUser):
             # tasks = simple_tasks
             tasks = [self._task_sequence_factory()]
-            host = f"http://{self.base_address}:8080"
+            host = f"http://{self.base_address}:{self.port}"
 
         return CustomLocust
 
@@ -192,11 +205,11 @@ def _on_request(
         **kwargs,
 ):
     """Event hook to log requests made by Locust"""
-    logger.debug(
+    logger.info(
         f"{request_type} {name} {response.status_code} {response_time} {context}"
     )
     if exception:
-        logger.debug(f"{request_type} {exception}")
+        logger.info(f"{request_type} {exception}")
 
 
 def task_factory(task: LocustTask):

@@ -154,7 +154,7 @@ class KubernetesOrchestrator(Orchestrator):
     
     def get_address_for_service(self, label_selector: str, label: str, namespace: str) -> str:
         """
-        Get the address for a service
+        Get the first address found for a service
 
         Args:
             label_selector: The label selector for the service
@@ -181,10 +181,17 @@ class KubernetesOrchestrator(Orchestrator):
             The address of the Jaeger service
 
         """
+        assert self.experiment_config["experiment"] is not None
+        assert self.experiment_config["experiment"]["pods"] is not None
+        assert self.experiment_config["experiment"]["pods"]["jaeger"] is not None
+        
+        jaeger_label_selector = self.experiment_config["experiment"]["pods"]["jaeger"]["label_selector"]
+        jaeger_label = self.experiment_config["experiment"]["pods"]["jaeger"]["label"]
+        jaeger_namespace = self.experiment_config["experiment"]["pods"]["jaeger"]["namespace"]
         return self.get_address_for_service(
-            label_selector="app.kubernetes.io/name",
-            label="jaeger",
-            namespace="default",
+            label_selector=jaeger_label_selector,
+            label=jaeger_label,
+            namespace=jaeger_namespace,
         )
     
     def get_prometheus_address(self) -> str:
@@ -195,10 +202,18 @@ class KubernetesOrchestrator(Orchestrator):
             The address of the Prometheus service
 
         """
+        
+        assert self.experiment_config["experiment"] is not None
+        assert self.experiment_config["experiment"]["pods"] is not None
+        assert self.experiment_config["experiment"]["pods"]["prometheus"] is not None
+        
+        prometheus_label_selector = self.experiment_config["experiment"]["pods"]["prometheus"]["label_selector"]
+        prometheus_label = self.experiment_config["experiment"]["pods"]["prometheus"]["label"]
+        prometheus_namespace = self.experiment_config["experiment"]["pods"]["prometheus"]["namespace"]
         return self.get_address_for_service(
-            label_selector="app.kubernetes.io/name",
-            label="prometheus",
-            namespace="default",
+            label_selector=prometheus_label_selector,
+            label=prometheus_label,
+            namespace=prometheus_namespace,
         )
     
     def get_orchestrator_type(self) -> str:
@@ -247,6 +262,14 @@ class KubernetesOrchestrator(Orchestrator):
             replicas: The number of replicas
 
         """
+        assert deployment is not None
+        assert deployment.spec is not None
+        assert deployment.metadata is not None
+        assert deployment.metadata.name is not None
+        assert deployment.metadata.namespace is not None
+        assert deployment.spec.replicas is not None
+        assert replicas >= 0
+
         deployment.spec.replicas = replicas
         response = self.api_client.patch_namespaced_deployment_scale(
             name=deployment.metadata.name,

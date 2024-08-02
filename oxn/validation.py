@@ -241,6 +241,12 @@ syntactic_schema = schema.Schema(
                         schema.Optional("params"): dict,
                     }
                 ],
+                schema.Optional("target"): {
+                    "label_selector": str,
+                    "label": str,
+                    "namespace": str,
+                    "port": int,
+                },
             },
         },
     }

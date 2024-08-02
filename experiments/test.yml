@@ -4,13 +4,13 @@ experiment:
   orchestrator: kubernetes
   pods:
     jaeger: 
-      label_selector: app.kubernetes.io/name,
-      label: jaeger,
-      namespace: default,
+      label_selector: app.kubernetes.io/name
+      label: jaeger
+      namespace: default
     prometheus:
-      label_selector: app.kubernetes.io/name,
-      label: prometheus,
-      namespace: default,
+      label_selector: app.kubernetes.io/name
+      label: prometheus
+      namespace: default
   responses:
     - recommendations_total:
         type: metric
@@ -23,7 +23,7 @@ experiment:
         action: scale_deployment
         params: {
           namespace: default,
-          label_selector:  app.kubernetes.io/component,
+          label_selector: app.kubernetes.io/component,
           label: loadgenerator,
           scale_to: 0,
         }
@@ -64,3 +64,8 @@ experiment:
     - { endpoint: /api/cart, verb: get, weight: 3, params: { } }
     - { endpoint: /api/data, verb: get, weight: 3, params: { "contextKeys": [ "accessories" ] } }
     - { endpoint: /api/cart, verb: post, weight: 2, params: { "item": {"productId":"6E92ZMYYFZ", "quantity":2, }, "userId":'ab2d0fc0-7224-11ec-8ef2-b658b885fb3',} }
+    target:
+      label_selector: app.kubernetes.io/component
+      label: frontendproxy
+      namespace: default
+      port: 8080
