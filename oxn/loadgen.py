@@ -118,6 +118,7 @@ class LoadGenerator:
             # tasks = simple_tasks
             tasks = simple_tasks
             host = f"http://{self.base_address}:{self.port}"
+            locust.FastHttpUser.wait_time = locust.between(0.1, 1)
 
         return CustomLocust
 
@@ -128,6 +129,7 @@ class LoadGenerator:
             # tasks = simple_tasks
             tasks = [self._task_sequence_factory()]
             host = f"http://{self.base_address}:{self.port}"
+            locust.FastHttpUser.wait_time = locust.between(0.1, 1)
 
         return CustomLocust
 
