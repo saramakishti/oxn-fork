@@ -67,6 +67,7 @@ experiment:
     #- { endpoint: /api/cart, verb: post, weight: 2, params: { "item": {"productId":"6E92ZMYYFZ", "quantity":2, }, "userId":'ab2d0fc0-7224-11ec-8ef2-b658b885fb3',} }
     locust_files: [
       { path: locust/locust_basic_interaction.py },
+      { path: locust/locust_otel_demo.py },
       ]
     target:
       label_selector: app.kubernetes.io/component
