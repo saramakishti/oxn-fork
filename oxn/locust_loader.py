@@ -95,12 +95,13 @@ class LocustLoader:
         """Join the greenlet created by locust env (= wait until it has finished)"""
         if self.env and self.env.runner:
             self.env.runner.quit()
-            self.greenlets.join()
-        
-            
+            self.greenlets.join(timeout=30)  # Add a timeout to ensure it doesn't stall indefinitely
+            self.greenlets.kill()  # Kill any remaining greenlets if they didn't terminate
 
     def kill(self):
         """Kill all greenlets spawned by locust"""
         self.greenlets.kill()
+        if self.env and self.env.runner:
+            self.env.runner.quit()  # Ensure the runner is stopped if kill is called
 
 
