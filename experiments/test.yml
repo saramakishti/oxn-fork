@@ -54,16 +54,20 @@ experiment:
     required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}] # {namespace: monitoring, name: not-running-service}
     #required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}]
   loadgen:
-    run_time: 1m
-    stages: 
-    - {duration: 20, users: 50, spawn_rate: 25}
-    tasks:
-    - { endpoint: /, verb: get, weight: 1, params: { } }
-    - { endpoint: /api/products/0PUK6V6EV0, verb: get, weight: 10, params: { } }
-    - { endpoint: /api/recommendations, verb: get, weight: 3, params: { "productIds": ["1YMWWN1N4O"]}}
-    - { endpoint: /api/cart, verb: get, weight: 3, params: { } }
-    - { endpoint: /api/data, verb: get, weight: 3, params: { "contextKeys": [ "accessories" ] } }
-    - { endpoint: /api/cart, verb: post, weight: 2, params: { "item": {"productId":"6E92ZMYYFZ", "quantity":2, }, "userId":'ab2d0fc0-7224-11ec-8ef2-b658b885fb3',} }
+    run_time: 3m
+    #stages: 
+    #- {duration: 20, users: 10, spawn_rate: 5}
+    #- {duration: 600, users: 50, spawn_rate: 10}
+    #tasks:
+    #- { endpoint: /, verb: get, weight: 1, params: { } }
+    #- { endpoint: /api/products/0PUK6V6EV0, verb: get, weight: 10, params: { } }
+    #- { endpoint: /api/recommendations, verb: get, weight: 3, params: { "productIds": ["1YMWWN1N4O"]}}
+    #- { endpoint: /api/cart, verb: get, weight: 3, params: { } }
+    #- { endpoint: /api/data, verb: get, weight: 3, params: { "contextKeys": [ "accessories" ] } }
+    #- { endpoint: /api/cart, verb: post, weight: 2, params: { "item": {"productId":"6E92ZMYYFZ", "quantity":2, }, "userId":'ab2d0fc0-7224-11ec-8ef2-b658b885fb3',} }
+    locust_files: [
+      { path: locust/locust_basic_interaction.py },
+      ]
     target:
       label_selector: app.kubernetes.io/component
       label: frontendproxy
