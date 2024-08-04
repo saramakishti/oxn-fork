@@ -1,5 +1,6 @@
 
 import importlib
+from importlib.machinery import ModuleSpec
 import importlib.util
 import logging
 
@@ -78,6 +79,10 @@ class LocustLoader:
         spec = importlib.util.spec_from_file_location("locustfile", path)
         if not spec:
             raise LocustException(f"Could not load locust file from {path}")
+        
+        assert isinstance(spec, ModuleSpec)
+        assert spec.loader is not None
+        
         locustfile = importlib.util.module_from_spec(spec)
         spec.loader.exec_module(locustfile)
         return locustfile
@@ -85,6 +90,9 @@ class LocustLoader:
     def start(self):
         """Start the load generation"""
         setup_logging("INFO", None)
+        
+        assert self.env is not None, "Locust environment must be initialized before starting"
+        assert self.env.runner is not None, "Locust runner must be initialized before starting"
         
         self.env.runner.start(250, 10.0)
         #self.greenlets.spawn(stats_printer(self.env.stats))
