@@ -4,12 +4,16 @@ Functionality: Defines treatment classes that simulate different fault condition
 Connection: Loaded by the Runner to apply treatments during an experiment.
 
 Treatment implementations"""
+from html.entities import name2codepoint
 import logging
+from os import name
 import os.path
 import tempfile
 import time
 import re
+import trace
 from typing import Optional, cast
+import traceback
 
 import docker
 import yaml
@@ -197,6 +201,106 @@ class EmptyDockerComposeTreatment(Treatment):
 
     def is_runtime(self):
         return True
+
+
+
+class KubernetesApplySecurityContextTreatment(Treatment):
+    """
+    Treatment to escalate the privileges of a service account in a Kubernetes cluster
+    """
+
+    def clean(self) -> None:
+        return
+        super().clean()
+        namespace = self.config.get("namespace")
+        label_selector = self.config.get("label_selector")
+        label = self.config.get("label")
+        
+        assert namespace
+        assert label_selector
+        assert label
+        assert self.config.get("capabilities")
+        assert self.config.get("capabilities").get("add")
+        assert isinstance(self.orchestrator, KubernetesOrchestrator)
+        
+        # capabilities should now be the opisite of what was applied in inject (e.g. inject was { add: ["NET_ADMIN"] } so clean should be { remove: ["NET_ADMIN"] })
+        capabilities = {"add": []}
+        
+        error_code, error = self.orchestrator.apply_security_context_to_deployment(
+            namespace=namespace,
+            label_selector=label_selector,
+            label=label,
+            capabilities=capabilities
+        )
+        
+        logger.info(f"Applied security context to deployment in {namespace} with {label_selector}={label} with result {error_code}: {error}")
+
+    def _transform_params(self) -> None:
+        pass
+    
+    def _validate_params(self) -> bool:
+        bools = []
+        for key, value in self.params().items():
+            if key in {"capabilities", "namespace", "label_selector", "label"} and key not in self.config:
+                self.messages.append(f"Parameter {key} has to be supplied")
+                bools.append(False)
+            if key in self.config and not isinstance(self.config[key], value):
+                self.messages.append(f"Parameter {key} has to be of type {str(value)}")
+        for key, value in self.config.items():
+            if key == "duration":
+                if not validate_time_string(value):
+                    self.messages.append(
+                        f"Parameter {key} has to match {time_string_format_regex}"
+                    )
+                    bools.append(False)
+        return all(bools)
+
+    def inject(self) -> None:
+        super().inject()
+        capabilities = self.config.get("capabilities")
+        namespace = self.config.get("namespace")
+        label_selector = self.config.get("label_selector")
+        label = self.config.get("label")
+        
+        assert namespace
+        assert label_selector
+        assert label
+        assert capabilities and capabilities.get("add")
+        assert isinstance(self.orchestrator, KubernetesOrchestrator)
+        error_code, error = self.orchestrator.apply_security_context_to_deployment(
+            namespace=namespace,
+            label_selector=label_selector,
+            label=label,
+            capabilities=capabilities
+        )
+        logger.info(f"Applied security context to deployment in {namespace} with {label_selector}={label} with result {error_code}: {error}")
+        # TODO: check if the deployment was actually updated and if so, wait for the deployment to be ready
+
+    def params(self) -> dict:
+        return {
+            "capabilities": dict,
+            "namespace": str,
+            "label_selector": str,
+            "label": str,
+        }
+
+    def preconditions(self) -> bool:
+        return True
+
+    @property
+    def action(self):
+        return "security_context_kubernetes"
+
+    def is_runtime(self):
+        return False
+    
+    def _validate_orchestrator(self) -> bool:
+        if self.orchestrator.get_orchestrator_type() != "kubernetes":
+            self.messages.append(f"{self.name} treatment is only supported for Kubernetes orchestrators")
+            return False
+        return True
+
+
 
 
 """
@@ -796,7 +900,7 @@ class NetworkDelayTreatment(Treatment):
         for key, val in self.params().items():
             # required params
             if (
-                    key in {"service_name", "duration", "interface", "delay_time"}
+                    key in {"namespace", "label_selector", "label", "interface", "duration", "delay_time"}
                     and key not in self.config
             ):
                 self.messages.append(
@@ -836,7 +940,6 @@ class NetworkDelayTreatment(Treatment):
 
     def params(self) -> dict:
         return {
-            "service_name": str,
             "interface": str,
             "duration": str,
             "delay_time": str,
@@ -848,18 +951,27 @@ class NetworkDelayTreatment(Treatment):
     def preconditions(self) -> bool:
         super().preconditions()
         """Check if the service has tc installed"""
-        service = self.config.get("service_name")
+        #service = self.config.get("service_name")
+        namespace = self.config.get("namespace")
+        label_selector = self.config.get("label_selector")
+        label = self.config.get("label")
         command = ["tc", "-Version"]
         try:
-            assert service
-            # TODO: Branching on orchestrator type is maybe better than abstracting so much away
-            # the kubernetes exec is not working the same way with the status codes as expected from docker
-            status_code, _ = self.orchestrator.execute_console_command(service, command)
-            logger.info(f"Probed {service} for tc with result {status_code}")
+            assert namespace
+            assert label_selector
+            assert label
+            assert isinstance(self.orchestrator, KubernetesOrchestrator)
+            status_code, _ = self.orchestrator.execute_console_command_on_all_matching_pods(
+                namespace=namespace,
+                label_selector=label_selector,
+                label=label,
+                command=command
+            )
+            logger.info(f"Probed pods in {namespace} with {label_selector}={label} for tc with result {status_code}")
             if status_code > 1 or status_code < 0:
                 self.messages.append(
-                    f"{service} does not have tc installed which is required for {self.treatment_type}. Please install "
-                    "package iptables2 in the container"
+                    f"Not all pods in {namespace} with {label_selector}={label} does not have tc installed which is required for {self.treatment_type}. Please install "
+                    "package iproute2 in the container"
                 )
                 return False
             return True
@@ -871,12 +983,15 @@ class NetworkDelayTreatment(Treatment):
             return False
         except Exception as e:
             self.messages.append(str(e))
+            print(traceback.format_exc())
             return False
 
     def inject(self) -> None:
         super().inject()
         # required params
-        service = self.config.get("service_name")
+        namespace = self.config.get("namespace")
+        label_selector = self.config.get("label_selector")
+        label = self.config.get("label")
         interface = self.config.get("interface")
         delay_time = self.config.get("delay_time")
         duration = self.config.get("duration_seconds")
@@ -897,34 +1012,57 @@ class NetworkDelayTreatment(Treatment):
             correlation,
         ]
         try:
-            logger.warn("NOOP implementation")
-            #container = self.client.containers.get(container_id=service)
-            #container.exec_run(cmd=command)
+            assert namespace
+            assert label_selector
+            assert label
+            assert duration
+            assert isinstance(self.orchestrator, KubernetesOrchestrator)
+            status_code, _ = self.orchestrator.execute_console_command_on_all_matching_pods(
+                namespace=namespace,
+                label_selector=label_selector,
+                label=label,
+                command=command
+            )
+            if status_code > 1:
+                logger.error(
+                    f"Failed to inject delay into pods in {namespace} with {label_selector}={label}. Return code: {status_code}"
+                )
+                return
             logger.info(
-                f"Injected delay into container {service}. Waiting for {duration}s."
+                f"Injected delay into pods in {namespace} with {label_selector}={label}. Waiting for {duration}s."
             )
             time.sleep(duration)
         except ContainerNotFound:
-            logger.error(f"Can't find container {service}")
+            logger.error(f"Can't find container ")
         except DockerAPIError as e:
             logger.error(f"Docker API returned an error: {e.explanation}")
 
     def clean(self) -> None:
         super().clean()
         interface = self.config.get("interface") or "eth0"
-        service = self.config.get("service_name")
+        namespace = self.config.get("namespace")
+        label_selector = self.config.get("label_selector")
+        label = self.config.get("label")
         command = ["tc", "qdisc", "del", "dev", interface, "root", "netem"]
         try:
-            logger.warning("NOOP implementation")
-            #container = self.client.containers.get(container_id=service)
-            #container.exec_run(cmd=command)
-            logger.info(f"Cleaned delay treatment from container {service}")
+            assert namespace
+            assert label_selector
+            assert label
+            assert isinstance(self.orchestrator, KubernetesOrchestrator)
+            status_code, _ = self.orchestrator.execute_console_command_on_all_matching_pods(
+                namespace=namespace,
+                label_selector=label_selector,
+                label=label,
+                command=command
+            )
+            
+            logger.info(f"Cleaned delay treatment from pods in {namespace} with {label_selector}={label}")
             #self.client.close()
         except (ContainerNotFound, DockerAPIError) as e:
             logger.error(
-                f"Cannot clean delay treatment from container {service}: {e.explanation}"
+                f"Cannot clean delay treatment from pods in {namespace} with {label_selector}={label}: {e.explanation}"
             )
-            logger.error(f"Container state for {service} might be polluted now")
+            logger.error(f"State for pods in {namespace} with {label_selector}={label} might be polluted now")
             
     def _validate_orchestrator(self) -> bool:
         if self.orchestrator.get_orchestrator_type() != "kubernetes":

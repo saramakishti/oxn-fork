@@ -15,7 +15,7 @@ experiment:
     - recommendations_total:
         type: metric
         metric_name: increase(app_recommendations_counter_total[90s])
-        left_window: 60s
+        left_window: 10s
         right_window: 60s
         step: 1
   treatments:
@@ -27,13 +27,24 @@ experiment:
           label: loadgenerator,
           scale_to: 0,
         }
+    - add_security_context:
+        action: security_context_kubernetes
+        params: {
+          namespace: default,
+          label_selector: app.kubernetes.io/component,
+          label: recommendationservice,
+          capabilities: { add: ["NET_ADMIN"] },
+        }
     - delay_treatment:
         action: delay
         params: {
-          service_name: node-exporter,
+          namespace: default,
+          label_selector: app.kubernetes.io/component,
+          label: recommendationservice,
+          #service_name: node-exporter,
           delay_time: 45ms,
           delay_jitter: 45ms,
-          duration: 10s,
+          duration: 60s,
           interface: eth0,
         }
     - empty_k8s:

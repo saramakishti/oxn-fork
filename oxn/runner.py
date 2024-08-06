@@ -22,6 +22,7 @@ from .treatments import (
     EmptyDockerComposeTreatment,
     EmptyKubernetesTreatment,
     EmptyTreatment,
+    KubernetesApplySecurityContextTreatment,
     NetworkDelayTreatment,
     PauseTreatment,
     PacketLossTreatment,
@@ -68,6 +69,7 @@ class ExperimentRunner:
         "probl": ProbabilisticSamplingTreatment,
         "otel_metrics_interval": MetricsExportIntervalTreatment,
         "scale_deployment": DeploymentScaleTreatment,
+        "security_context_kubernetes": KubernetesApplySecurityContextTreatment,
     }
 
     def __init__(

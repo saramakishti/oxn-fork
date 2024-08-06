@@ -89,7 +89,7 @@ class KubernetesOrchestrator(Orchestrator):
     Get all pods for a given service and execute a command on them and aggregate the results
     If the command fails on any pod, the function will return the error code and the error message
     """
-    def execute_console_command(self, label: str, command: List[str]) -> Tuple[int, str]:
+    def execute_console_command_on_all_matching_pods(self, label_selector:str, label: str, namespace: str, command: List[str]) -> Tuple[int, str]:
         """
         Execute a console command via the kubernetes orchestrator on pods with a given label
 
@@ -108,7 +108,8 @@ class KubernetesOrchestrator(Orchestrator):
         #logging.info("execute_console_command noop implementation for service %s with command %s", service, command)
 
         # Get all pods with label app.kubernetes.io/name=service
-        pods = self.kube_client.list_pod_for_all_namespaces(label_selector=f"app.kubernetes.io/name={label}")
+        pods = self.kube_client.list_namespaced_pod(namespace=namespace, label_selector=f"{label_selector}={label}")
+        #pods = self.kube_client.list_pod_for_all_namespaces(label_selector=f"app.kubernetes.io/name={label}")
 
         if not pods.items:
             raise OrchestratorResourceNotFoundException(
@@ -120,7 +121,7 @@ class KubernetesOrchestrator(Orchestrator):
         for pod in pods.items:
             try:
                 exec_command = command
-                assert pod.metadata.annotations['kubectl.kubernetes.io/default-container']
+                assert pod.metadata.labels[label_selector]
 
                 wrapped_command = ['sh', '-c', f"{' '.join(exec_command)}; echo $?"]
     
@@ -128,12 +129,14 @@ class KubernetesOrchestrator(Orchestrator):
                                 name=pod.metadata.name,
                                 namespace=pod.metadata.namespace,
                                 command=wrapped_command,
-                                container=pod.metadata.annotations.get('kubectl.kubernetes.io/default-container', None),
+                                container=label,
                                 stderr=True,
                                 stdin=False,
                                 stdout=True,
                                 tty=False)
                 
+                if response == "0":
+                    return 0, "Success"
                 # Split the response to separate the command output and exit status
                 response_lines = response.split('\n')
                 exit_status_line = response_lines[-2].strip()
@@ -151,6 +154,71 @@ class KubernetesOrchestrator(Orchestrator):
             
 
         return 0, "Success"
+    
+    def apply_security_context_to_deployment(self, label_selector:str, label: str, namespace: str, capabilities: dict) -> Tuple[int, str]:
+        """
+        Apply a security context to a deployment
+
+        Args:
+            label_selector: The label selector for the deployment
+            label: The name of the deployment
+            namespace: The namespace of the deployment
+            security_context: The security context to apply
+
+        Returns:
+            A tuple of the return code and the output of the command
+
+        Throws:
+            OrchestratorResourceNotFoundException: If no pods are found for the given label
+            OrchestratorException: If an error occurs while executing the command
+        
+        """
+        try:
+            # Get the deployment
+            deployment = self.get_deployment(namespace, label_selector, label)
+
+           
+            
+             # Apply the security context to each container
+            container_bodies = []
+            containers = deployment.spec.template.spec.containers
+            for container in containers:
+                container_body = {
+                    "name": container.name,
+                    "securityContext": {
+                        "capabilities": capabilities
+                    }
+                }
+                container_bodies.append(container_body)
+                
+            # Prepare the patch body
+            patch_body = {
+                "spec": {
+                    "template": {
+                        "spec": {
+                            "containers": container_bodies
+                        }
+                    }
+                }
+            }
+
+        
+            print(patch_body)
+            # Apply the patch
+            response = self.api_client.patch_namespaced_deployment(
+                name=deployment.metadata.name,
+                namespace=deployment.metadata.namespace,
+                body=patch_body,
+            )
+            return 0, "Success"
+
+        except ApiException as e:
+            print(f"Exception when calling AppsV1Api->patch_namespaced_deployment: {e}")
+            return 1, str(e)
+        except Exception as e:
+            print(f"Unexpected error: {e}")
+            return 1, str(e)
+                
     
     def get_address_for_service(self, label_selector: str, label: str, namespace: str) -> str:
         """

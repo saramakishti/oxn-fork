@@ -31,20 +31,20 @@ class Orchestrator(ABC):
     def running_services(self) -> List[str]:
         pass
 
-    @abstractmethod
-    def execute_console_command(self, service: str, command: List[str]) -> Tuple[int, str]:
-        """
-        Execute a console command on the orchestrator
+    #@abstractmethod
+    #def execute_console_command(self, service: str, command: List[str]) -> Tuple[int, str]:
+    #    """
+    #    Execute a console command on the orchestrator
 
-        Args:
-            service: The service to execute the command on
-            command: The command to execute
+    #    Args:
+    #        service: The service to execute the command on
+    #        command: The command to execute
 
-        Returns:
-            A tuple of the return code and the output of the command
+    #    Returns:
+    #        A tuple of the return code and the output of the command
 
-        """
-        pass
+    #    """
+    #    pass
 
     @abstractmethod
     def get_address_for_service(self, service: str) -> str:
