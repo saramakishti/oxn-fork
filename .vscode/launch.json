@@ -23,7 +23,7 @@
             },
             "args": [
                 "experiments/test.yml",
-                "--report", "reports/test.yml"
+                "--report", "reports/"
             ],
             "console": "integratedTerminal",
         }

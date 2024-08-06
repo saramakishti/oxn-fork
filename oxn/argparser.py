@@ -36,8 +36,7 @@ parser.add_argument(
     "--report",
     dest="report",
     type=str,
-    help="Create an experiment report at the specified location. If the file exists, it will be overwritten. If it "
-    "does not exist, it will be created.",
+    help="Create an experiment report in the specified directory. Make sure that the directory exists. The report will be named report_<timestamp>.yaml",
 )
 parser.add_argument(
     "--accounting",

@@ -15,6 +15,7 @@ from .kubernetes_orchestrator import KubernetesOrchestrator
 from .report import Reporter
 from .store import write_dataframe
 from .loadgen import LoadGenerator
+from .locust_file_loadgenerator import LocustFileLoadgenerator
 from .utils import utc_timestamp
 from .validation import syntactic_schema
 from .context import Context
@@ -105,7 +106,7 @@ class Engine:
                     message="Unknown orchestrator",
                     explanation=f"Orchestrator {self.spec['experiment']['orchestrator']} is not supported",
                 )
-            self.generator = LoadGenerator(orchestrator=self.orchestrator, target_service="prometheus", config=self.spec)
+            self.generator = LocustFileLoadgenerator(orchestrator=self.orchestrator, config=self.spec)
             names = []
             """ (
                 self.orchestrator.translate_compose_names(

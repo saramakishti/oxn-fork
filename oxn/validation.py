@@ -232,7 +232,7 @@ syntactic_schema = schema.Schema(
                         "spawn_rate": int,
                     }
                 ],
-                "tasks": [
+                schema.Optional("tasks"): [
                     {
                         schema.Optional("name"): str,
                         "endpoint": str,
@@ -241,6 +241,7 @@ syntactic_schema = schema.Schema(
                         schema.Optional("params"): dict,
                     }
                 ],
+                schema.Optional("locust_files"): list[str],
                 schema.Optional("target"): {
                     "label_selector": str,
                     "label": str,
