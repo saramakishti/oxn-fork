@@ -23,6 +23,7 @@ from .treatments import (
     EmptyKubernetesTreatment,
     EmptyTreatment,
     KubernetesApplySecurityContextTreatment,
+    KubernetesKillTreatment,
     NetworkDelayTreatment,
     PauseTreatment,
     PacketLossTreatment,
@@ -70,6 +71,7 @@ class ExperimentRunner:
         "otel_metrics_interval": MetricsExportIntervalTreatment,
         "scale_deployment": DeploymentScaleTreatment,
         "security_context_kubernetes": KubernetesApplySecurityContextTreatment,
+        "kubernetes_kill": KubernetesKillTreatment,
     }
 
     def __init__(

@@ -12,6 +12,7 @@ from kubernetes import client, config
 from kubernetes.stream import stream
 from kubernetes.client.exceptions import ApiException
 from kubernetes.client.models.v1_deployment import V1Deployment
+from kubernetes.client.models.v1_pod import V1Pod
 
 from oxn.models.orchestrator import Orchestrator  # Import the abstract base class
 
@@ -343,5 +344,46 @@ class KubernetesOrchestrator(Orchestrator):
             name=deployment.metadata.name,
             namespace=deployment.metadata.namespace,
             body=deployment,
+        )
+        return response
+
+    def get_pods(self, namespace, label_selector, label) -> List[V1Pod]:
+        """
+        Get the pods for a service
+
+        Args:
+            namespace: The namespace of the service
+            label_selector: The label selector for the service
+            label: The label of the service
+
+        Returns:
+            The pods of the service
+
+        """
+        pods = self.kube_client.list_namespaced_pod(namespace, label_selector=f"{label_selector}={label}")
+        if not pods.items:
+            raise OrchestratorResourceNotFoundException(
+                message=f"No pods found for service {label}",
+                explanation="No pods found for the given service",
+            )
+        return pods.items
+    
+    def kill_pod(self, pod: V1Pod):
+        """
+        Kill a pod
+
+        Args:
+            pod: The pod to kill
+
+        """
+        assert pod is not None
+        assert pod.metadata is not None
+        assert pod.metadata.name is not None
+        assert pod.metadata.namespace is not None
+
+        response = self.kube_client.delete_namespaced_pod(
+            name=pod.metadata.name,
+            namespace=pod.metadata.namespace,
+            grace_period_seconds=0,
         )
         return response
