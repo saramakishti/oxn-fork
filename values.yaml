@@ -2,9 +2,20 @@ jaeger:
   allInOne:
     resources:
       requests:
-        memory: 1200Mi
+        memory: 2200Mi
       limits:
-        memory: 1200Mi
+        memory: 2200Mi
+
+components:
+  flagd:
+    resources:
+      limits:
+        memory: 150Mi
+  productcatalogservice:
+    resources:
+      limits:
+        memory: 150Mi
+
 prometheus: 
   prometheus-node-exporter:
     enabled: true
