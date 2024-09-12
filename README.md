@@ -92,3 +92,16 @@ options:
 oxn experiments/recommendation_pause_baseline.yml --report baseline_report.yml
 
 ```
+
+### Running in kubernetes
+Install the [Helm Chart](https://opentelemetry.io/docs/demo/kubernetes-deployment/):
+```
+helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
+
+helm install astronomy-shop open-telemetry/opentelemetry-demo
+```
+
+Apply custom changes needed for OXN to run
+```
+helm upgrade astronomy-shop open-telemetry/opentelemetry-demo -f values.yaml
+```

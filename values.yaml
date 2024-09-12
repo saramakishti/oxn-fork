@@ -1,0 +1,7 @@
+jaeger:
+  allInOne:
+    resources:
+      requests:
+        memory: 1200Mi
+      limits:
+        memory: 1200Mi
