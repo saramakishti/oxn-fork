@@ -104,4 +104,6 @@ helm install astronomy-shop open-telemetry/opentelemetry-demo
 Apply custom changes needed for OXN to run
 ```
 helm upgrade astronomy-shop open-telemetry/opentelemetry-demo -f values.yaml
+kubectl annotate svc/kubelet -n kube-system --overwrite prometheus.io/scrape=true prometheus.io/port=10250 opentelemetry_community_demo=true prometheus.io/scheme=https
+kubectl annotate endpoints/kubelet -n kube-system --overwrite prometheus.io/scrape=true prometheus.io/port=10250 opentelemetry_community_demo=true prometheus.io/scheme=https
 ```
