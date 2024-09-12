@@ -38,7 +38,7 @@ class Jaeger:
         """Mount the retry adapter"""
         address = orchestrator.get_jaeger_address()
         assert address is not None
-        self.base_url = f"http://{address}:8080/jaeger/ui/api/"
+        self.base_url = f"http://{address}:16686/jaeger/ui/api/"
         """Jaeger base url"""
         self.endpoints = {
             "traces": "traces",
