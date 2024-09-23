@@ -1,0 +1,3 @@
+extraEnvVars:
+  MODEL_CONFIG: |
+    CONTAINER_COMPONENTS_ESTIMATOR=false
