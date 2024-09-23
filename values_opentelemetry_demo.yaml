@@ -11,18 +11,18 @@ components:
     resources:
       limits:
         memory: 150Mi
-  productcatalogservice:
+  productCatalogService:
     resources:
       limits:
         memory: 150Mi
 
 prometheus: 
-  prometheus-node-exporter:
-    enabled: true
-    podAnnotations:
-      prometheus.io/scrape: "true"
-      prometheus.io/port: "9100"
-      opentelemetry_community_demo: "true"
+  #prometheus-node-exporter:
+  #  enabled: true
+  #  podAnnotations:
+  #    prometheus.io/scrape: "true"
+  #    prometheus.io/port: "9100"
+  #    opentelemetry_community_demo: "true"
   kube-state-metrics: 
     enabled: true
     podAnnotations:
