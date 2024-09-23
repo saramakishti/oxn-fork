@@ -22,7 +22,6 @@
     "editable": true,
     "fiscalYearStartMonth": 0,
     "graphTooltip": 0,
-    "id": 2,
     "links": [],
     "liveNow": false,
     "panels": [
@@ -80,17 +79,22 @@
         },
         "id": 12,
         "options": {
+          "minVizHeight": 75,
+          "minVizWidth": 75,
           "orientation": "auto",
           "reduceOptions": {
-            "calcs": ["lastNotNull"],
+            "calcs": [
+              "lastNotNull"
+            ],
             "fields": "",
             "values": false
           },
           "showThresholdLabels": false,
           "showThresholdMarkers": true,
+          "sizing": "auto",
           "text": {}
         },
-        "pluginVersion": "9.1.0",
+        "pluginVersion": "11.2.0",
         "targets": [
           {
             "datasource": {
@@ -159,11 +163,13 @@
               "mode": "palette-classic"
             },
             "custom": {
+              "axisBorderShow": false,
               "axisCenteredZero": false,
               "axisColorMode": "text",
               "axisLabel": "watt",
               "axisPlacement": "left",
               "barAlignment": 0,
+              "barWidthFactor": 0.6,
               "drawStyle": "bars",
               "fillOpacity": 44,
               "gradientMode": "opacity",
@@ -173,6 +179,7 @@
                 "tooltip": false,
                 "viz": false
               },
+              "insertNulls": false,
               "lineInterpolation": "linear",
               "lineWidth": 0,
               "pointSize": 5,
@@ -276,7 +283,9 @@
         "id": 16,
         "options": {
           "legend": {
-            "calcs": ["mean"],
+            "calcs": [
+              "mean"
+            ],
             "displayMode": "table",
             "placement": "right",
             "showLegend": true,
@@ -340,6 +349,7 @@
       },
       {
         "datasource": {
+          "default": false,
           "type": "prometheus",
           "uid": "${datasource}"
         },
@@ -350,11 +360,13 @@
               "mode": "palette-classic"
             },
             "custom": {
+              "axisBorderShow": false,
               "axisCenteredZero": false,
               "axisColorMode": "text",
               "axisLabel": "watt",
               "axisPlacement": "left",
               "barAlignment": 0,
+              "barWidthFactor": 0.6,
               "drawStyle": "bars",
               "fillOpacity": 44,
               "gradientMode": "opacity",
@@ -364,6 +376,203 @@
                 "tooltip": false,
                 "viz": false
               },
+              "insertNulls": false,
+              "lineInterpolation": "linear",
+              "lineWidth": 0,
+              "pointSize": 5,
+              "scaleDistribution": {
+                "type": "linear"
+              },
+              "showPoints": "always",
+              "spanNulls": false,
+              "stacking": {
+                "group": "A",
+                "mode": "normal"
+              },
+              "thresholdsStyle": {
+                "mode": "off"
+              }
+            },
+            "mappings": [],
+            "thresholds": {
+              "mode": "absolute",
+              "steps": [
+                {
+                  "color": "green",
+                  "value": null
+                },
+                {
+                  "color": "red",
+                  "value": 80
+                }
+              ]
+            }
+          },
+          "overrides": [
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*DRAM.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "orange",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*OTHER.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "blue",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*GPU.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "semi-dark-green",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            },
+            {
+              "matcher": {
+                "id": "byRegexp",
+                "options": ".*PKG.*"
+              },
+              "properties": [
+                {
+                  "id": "color",
+                  "value": {
+                    "fixedColor": "red",
+                    "mode": "fixed"
+                  }
+                }
+              ]
+            }
+          ]
+        },
+        "gridPos": {
+          "h": 10,
+          "w": 24,
+          "x": 0,
+          "y": 18
+        },
+        "id": 18,
+        "options": {
+          "legend": {
+            "calcs": [
+              "mean"
+            ],
+            "displayMode": "table",
+            "placement": "right",
+            "showLegend": true,
+            "sortBy": "Mean",
+            "sortDesc": true
+          },
+          "tooltip": {
+            "mode": "single",
+            "sort": "none"
+          }
+        },
+        "targets": [
+          {
+            "datasource": "prometheus",
+            "editorMode": "code",
+            "expr": "sum by (pod_name, container_namespace) (irate(kepler_container_package_joules_total{container_namespace=~\"$namespace\", pod_name=~\"$pod\"}[1m]))",
+            "hide": false,
+            "interval": "",
+            "legendFormat": "{{pod_name}} / {{container_namespace}} / PKG",
+            "range": true,
+            "refId": "A"
+          },
+          {
+            "datasource": "prometheus",
+            "editorMode": "code",
+            "expr": "sum by (pod_name, container_namespace) (irate(kepler_container_dram_joules_total{container_namespace=~\"$namespace\", pod_name=~\"$pod\"}[1m]))",
+            "hide": false,
+            "interval": "",
+            "legendFormat": "{{pod_name}} / {{container_namespace}} / DRAM",
+            "range": true,
+            "refId": "B"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${datasource}"
+            },
+            "editorMode": "code",
+            "expr": "sum by (pod_name, container_namespace) (irate(kepler_container_other_joules_total{container_namespace=~\"$namespace\", pod_name=~\"$pod\"}[1m]))",
+            "hide": true,
+            "interval": "",
+            "legendFormat": "{{pod_name}} / {{container_namespace}} / OTHER",
+            "range": true,
+            "refId": "C"
+          },
+          {
+            "datasource": {
+              "type": "prometheus",
+              "uid": "${datasource}"
+            },
+            "editorMode": "code",
+            "expr": "sum by (pod_name, container_namespace) (irate(kepler_container_gpu_joules_total{container_namespace=~\"$namespace\", pod_name=~\"$pod\"}[1m]))",
+            "hide": true,
+            "legendFormat": "{{pod_name}} / {{container_namespace}} / GPU",
+            "range": true,
+            "refId": "D"
+          }
+        ],
+        "title": "Pod/Process Power Consumption (W) in Namespace: $namespace",
+        "type": "timeseries"
+      },
+      {
+        "datasource": {
+          "type": "prometheus",
+          "uid": "${datasource}"
+        },
+        "description": "",
+        "fieldConfig": {
+          "defaults": {
+            "color": {
+              "mode": "palette-classic"
+            },
+            "custom": {
+              "axisBorderShow": false,
+              "axisCenteredZero": false,
+              "axisColorMode": "text",
+              "axisLabel": "watt",
+              "axisPlacement": "left",
+              "barAlignment": 0,
+              "barWidthFactor": 0.6,
+              "drawStyle": "bars",
+              "fillOpacity": 44,
+              "gradientMode": "opacity",
+              "hideFrom": {
+                "graph": false,
+                "legend": false,
+                "tooltip": false,
+                "viz": false
+              },
+              "insertNulls": false,
               "lineInterpolation": "linear",
               "lineWidth": 0,
               "pointSize": 5,
@@ -462,12 +671,15 @@
           "h": 8,
           "w": 12,
           "x": 0,
-          "y": 18
+          "y": 28
         },
         "id": 2,
         "options": {
           "legend": {
-            "calcs": ["mean", "max"],
+            "calcs": [
+              "mean",
+              "max"
+            ],
             "displayMode": "table",
             "placement": "bottom",
             "showLegend": true
@@ -544,11 +756,13 @@
               "mode": "palette-classic"
             },
             "custom": {
+              "axisBorderShow": false,
               "axisCenteredZero": false,
               "axisColorMode": "text",
               "axisLabel": "kWh",
               "axisPlacement": "left",
               "barAlignment": 0,
+              "barWidthFactor": 0.6,
               "drawStyle": "bars",
               "fillOpacity": 44,
               "gradientMode": "opacity",
@@ -558,6 +772,7 @@
                 "tooltip": false,
                 "viz": false
               },
+              "insertNulls": false,
               "lineInterpolation": "linear",
               "lineWidth": 0,
               "pointSize": 5,
@@ -656,12 +871,15 @@
           "h": 8,
           "w": 12,
           "x": 12,
-          "y": 18
+          "y": 28
         },
         "id": 17,
         "options": {
           "legend": {
-            "calcs": ["mean", "max"],
+            "calcs": [
+              "mean",
+              "max"
+            ],
             "displayMode": "table",
             "placement": "bottom",
             "showLegend": true,
@@ -759,22 +977,28 @@
           "h": 7,
           "w": 24,
           "x": 0,
-          "y": 26
+          "y": 36
         },
         "id": 15,
         "options": {
           "displayMode": "gradient",
+          "maxVizHeight": 300,
           "minVizHeight": 10,
           "minVizWidth": 0,
+          "namePlacement": "auto",
           "orientation": "auto",
           "reduceOptions": {
-            "calcs": ["lastNotNull"],
+            "calcs": [
+              "lastNotNull"
+            ],
             "fields": "",
             "values": false
           },
-          "showUnfilled": true
+          "showUnfilled": true,
+          "sizing": "auto",
+          "valueMode": "color"
         },
-        "pluginVersion": "9.1.0",
+        "pluginVersion": "11.2.0",
         "targets": [
           {
             "datasource": {
@@ -794,16 +1018,15 @@
       }
     ],
     "refresh": "",
-    "schemaVersion": 37,
-    "style": "dark",
+    "schemaVersion": 39,
     "tags": [],
     "templating": {
       "list": [
         {
           "current": {
-            "selected": true,
-            "text": "Prometheus-Kepler",
-            "value": "Prometheus-Kepler"
+            "selected": false,
+            "text": "Prometheus",
+            "value": "prometheus"
           },
           "hide": 0,
           "includeAll": false,
@@ -820,9 +1043,9 @@
         {
           "allValue": ".*",
           "current": {
-            "selected": false,
-            "text": "All",
-            "value": "$__all"
+            "selected": true,
+            "text": "system-under-evaluation",
+            "value": "system-under-evaluation"
           },
           "datasource": {
             "type": "prometheus",
@@ -952,7 +1175,7 @@
       ]
     },
     "time": {
-      "from": "now-15m",
+      "from": "now-1h",
       "to": "now"
     },
     "timepicker": {},
