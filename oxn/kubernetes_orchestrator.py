@@ -413,37 +413,59 @@ class KubernetesOrchestrator(Orchestrator):
         assert deployment.spec.template.spec.containers is not None
         assert environment_variable_name is not None
         assert environment_variable_value is not None
+        
+        new_env_var = client.V1EnvVar(name=environment_variable_name, value=environment_variable_value)
 
         container_bodies = []
         containers = deployment.spec.template.spec.containers
-        for container in containers:
-            container_body = {
-                "name": container.name,
-                "env": [
-                    {
-                        "name": environment_variable_name,
-                        "value": environment_variable_value,
-                    }
-                ]
-            }
-            container_bodies.append(container_body)
+        container = containers[0]
+
+        if container.env is None:
+            container.env = []
+
+        # check if env variable already exists and update it
+        is_updated = False
+        for env_var in container.env:
+            if env_var.name == environment_variable_name:
+                env_var.value = environment_variable_value
+                is_updated = True
+                break
+        if not is_updated:
+            container.env.append(new_env_var)
         
-        patch_body = {
-            "spec": {
-                "template": {
-                    "spec": {
-                        "containers": container_bodies
-                    }
-                }
-            }
-        }
         
         response = self.api_client.patch_namespaced_deployment(
             name=deployment.metadata.name,
             namespace=deployment.metadata.namespace,
-            body=patch_body,
+            body=deployment,
         )
         return response
+    
+    def get_deployment_env_parameters(self, deployment: V1Deployment) -> List[client.V1EnvVar]:
+        """
+        Get the environment variables for a deployment
+
+        Args:
+            deployment: The deployment to get the environment variables for
+
+        Returns:
+            The environment variables of the deployment
+
+        """
+        assert deployment is not None
+        assert deployment.spec is not None
+        assert deployment.metadata is not None
+        assert deployment.metadata.name is not None
+        assert deployment.metadata.namespace is not None
+        assert deployment.spec.template is not None
+        assert deployment.spec.template.spec is not None
+        assert deployment.spec.template.spec.containers is not None
+        
+        containers = deployment.spec.template.spec.containers
+        container = containers[0]
+        if container.env is None:
+            return []
+        return container.env
     
     def is_deployment_ready(self, deployment: V1Deployment) -> bool:
         """

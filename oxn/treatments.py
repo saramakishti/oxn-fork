@@ -612,7 +612,9 @@ class KubernetesMetricsExportIntervalTreatment(Treatment):
 
     def __init__(self, *args, **kwargs):
         super().__init__(*args, **kwargs)
-
+        self.init_env_value = None
+        self.env_name = "OTEL_METRIC_EXPORT_INTERVAL"
+        
     def action(self):
         return "kubernetes_otel_metrics_interval"
 
@@ -621,32 +623,55 @@ class KubernetesMetricsExportIntervalTreatment(Treatment):
         return True
 
     def inject(self) -> None:
-        namespace = self.config.get("namespace")
-        label_selector = self.config.get("label_selector")
-        label = self.config.get("label")
-        interval_ms = self.config.get("interval_ms")
+        self.namespace = self.config.get("namespace")
+        self.label_selector = self.config.get("label_selector")
+        self.label = self.config.get("label")
+        self.interval_ms = self.config.get("interval_ms")
 
         assert isinstance(self.orchestrator, KubernetesOrchestrator)
-
-        self.config["deployment"] = self.orchestrator.get_deployment(namespace, label_selector, label)
-        result = self.orchestrator.set_deployment_env_parameter(
-            deployment=self.config["deployment"],
-            environment_variable_name="OTEL_METRIC_EXPORT_INTERVAL",
-            environment_variable_value=str(int(interval_ms)),
+        
+        self.deployment = self.orchestrator.get_deployment(self.namespace, self.label_selector, self.label)
+        
+        deployment_environment_variables = self.orchestrator.get_deployment_env_parameters(
+            deployment=self.deployment
         )
+        
+        # get self.env_name from the deployments environment variables
+        for env_var in deployment_environment_variables:
+            if env_var.name == self.env_name:
+                self.init_env_value = env_var.value
+                break 
+
+        self.deployment = self.orchestrator.get_deployment(self.namespace, self.label_selector, self.label)
+        result = self.orchestrator.set_deployment_env_parameter(
+            deployment=self.deployment,
+            environment_variable_name=self.env_name,
+            environment_variable_value=str(int(self.interval_ms)),
+        )
+        
+        logging.info(f"Environment variable '{self.env_name} set to '{self.interval_ms}'ms for the deployment '{self.deployment.metadata.name}'.")
 
         time.sleep(5)
 
         for x in range(0, 10):
-            if self.orchestrator.is_deployment_ready(self.config["deployment"]):
+            if self.orchestrator.is_deployment_ready(self.deployment):
                 break
+            logging.info(f"Waiting for deployment {self.deployment.metadata.name} to be ready")
             time.sleep(2)
-            logging.info(f"Waiting for deployment {self.config['deployment'].metadata.name} to be ready")
 
 
     def clean(self) -> None:
-        # TODO: implement cleanup?
-        pass
+        if self.init_env_value is None:
+            return
+        assert isinstance(self.orchestrator, KubernetesOrchestrator)
+        # update the deployment as otherwise there will be an error because the deployment is outdated
+        self.deployment = self.orchestrator.get_deployment(self.namespace, self.label_selector, self.label)
+        result = self.orchestrator.set_deployment_env_parameter(
+            deployment=self.deployment,
+            environment_variable_name=self.env_name,
+            environment_variable_value=self.init_env_value,
+        )
+        logging.info(f"Environment variable '{self.env_name} reset for deployment '{self.deployment.metadata.name}' to initial value.")
 
     def params(self) -> dict:
         return {
