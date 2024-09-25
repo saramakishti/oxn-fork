@@ -1,9 +1,11 @@
 """
 """
 
+from cProfile import label
 from math import exp
 import re
 import yaml
+import time
 
 import logging
 from typing import Optional, List, Tuple
@@ -479,7 +481,142 @@ class KubernetesOrchestrator(Orchestrator):
 
         """
         assert deployment is not None
+        assert deployment.metadata is not None
+        assert deployment.metadata.name is not None
+        assert deployment.metadata.namespace is not None
+        
+        # update deployment status
+        deployment = self.api_client.read_namespaced_deployment_status(
+            name=deployment.metadata.name,
+            namespace=deployment.metadata.namespace,
+        )
+        
         assert deployment.status is not None
-        assert deployment.status.ready_replicas is not None
-        assert deployment.status.replicas is not None
-        return deployment.status.ready_replicas == deployment.status.replicas
+        return deployment.status.ready_replicas == deployment.status.replicas and deployment.status.replicas > 0
+    
+    def set_prometheus_scrape_values(self, scrape_interval, evaluation_interval, scrape_timeout):
+        """
+        Set the Prometheus scrape values
+
+        Args:
+            scrape_interval: The scrape interval
+            evaluation_interval: The evaluation interval
+            scrape_timeout: The scrape timeout
+
+        """
+        
+        # TODO: make this more generic
+        try:
+            configmap = self.kube_client.read_namespaced_config_map(name="astronomy-shop-prometheus-server", namespace="system-under-evaluation")
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while reading ConfigMap astronomy-shop-prometheus-server in namespace system-under-evaluation: {e.body}",
+                explanation=str(e),
+            )
+            
+        assert configmap is not None
+        assert isinstance(configmap, client.V1ConfigMap)
+        assert configmap.data is not None
+        
+        prometheus_config_yaml = configmap.data.get('prometheus.yml')
+
+        if not prometheus_config_yaml:
+            raise OrchestratorException(
+                message="prometheus.yml not found in ConfigMap",
+                explanation="prometheus.yml not found in ConfigMap",
+            )
+
+
+        prometheus_config = yaml.safe_load(prometheus_config_yaml)
+
+        if scrape_interval is not None:
+            prometheus_config['global']['scrape_interval'] = scrape_interval
+        if evaluation_interval is not None:
+            prometheus_config['global']['evaluation_interval'] = evaluation_interval
+        if scrape_timeout is not None:
+            prometheus_config['global']['scrape_timeout'] = scrape_timeout
+
+        updated_prometheus_config_yaml = yaml.dump(prometheus_config, default_flow_style=False)
+
+        configmap.data['prometheus.yml'] = updated_prometheus_config_yaml
+        
+        try:
+            self.kube_client.patch_namespaced_config_map(name="astronomy-shop-prometheus-server", namespace="system-under-evaluation", body=configmap)
+            logging.info(f"ConfigMap astronomy-shop-prometheus-server updated successfully.")
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while updating ConfigMap astronomy-shop-prometheus-server in namespace system-under-evaluation: {e.body}",
+                explanation=str(e),
+            )
+                
+                
+    def get_prometheus_scrape_values(self) -> Tuple[str, str, str]:
+        """
+        Get the Prometheus scrape values
+
+        Returns:
+            A tuple of the scrape interval, evaluation interval, and scrape timeout
+
+        """
+        
+        try:
+            configmap = self.kube_client.read_namespaced_config_map(name="astronomy-shop-prometheus-server", namespace="system-under-evaluation")
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while reading ConfigMap astronomy-shop-prometheus-server in namespace system-under-evaluation: {e.body}",
+                explanation=str(e),
+            )
+            
+        assert configmap is not None
+        assert isinstance(configmap, client.V1ConfigMap)
+        assert configmap.data is not None
+        
+        prometheus_config_yaml = configmap.data.get('prometheus.yml')
+
+        if not prometheus_config_yaml:
+            raise OrchestratorException(
+                message="prometheus.yml not found in ConfigMap",
+                explanation="prometheus.yml not found in ConfigMap",
+            )
+
+        prometheus_config = yaml.safe_load(prometheus_config_yaml)
+
+        scrape_interval = prometheus_config['global']['scrape_interval']
+        evaluation_interval = prometheus_config['global']['evaluation_interval']
+        scrape_timeout = prometheus_config['global']['scrape_timeout']
+
+        return scrape_interval, evaluation_interval, scrape_timeout
+
+    def restart_pods_of_deployment(self, deployment: V1Deployment):
+        """
+        Restart pods for a service
+
+        Args:
+            deployment: The deployment to restart the pods for
+
+        """
+        assert deployment is not None
+        assert deployment.metadata is not None
+        assert deployment.metadata.name is not None
+        assert deployment.metadata.namespace is not None
+        assert deployment.spec is not None
+        assert deployment.spec.selector is not None
+        assert deployment.spec.selector.match_labels is not None
+    
+        
+        pods = self.kube_client.list_namespaced_pod(
+            namespace=deployment.metadata.namespace,
+            label_selector="app.kubernetes.io/name=prometheus" # TODO: make this more generic
+        )
+        for pod in pods.items:
+            self.kill_pod(pod)
+            
+        time.sleep(1)
+        for i in range(0, 10):
+            if self.is_deployment_ready(deployment):
+                break
+            time.sleep(1)
+            logging.info(f"Waiting for deployment {deployment.metadata.name} to be ready")
+            
+            
+        

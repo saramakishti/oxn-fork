@@ -94,6 +94,14 @@ experiment:
           label: recommendationservice,
           interval: 100ms,
         }
+    # reloading the prometheus config is not as trivial as it seems to be
+    #- prometheus_scrape_interval:
+    #    action: kubernetes_prometheus_interval
+    #    params: {
+    #      interval: 15s,
+    #      evaluation_interval: 15s,
+    #      scrape_timeout: 10s,
+    #    }
   sue:
     compose: opentelemetry-demo/docker-compose.yml
     exclude: [loadgenerator]

@@ -16,7 +16,10 @@ components:
       limits:
         memory: 150Mi
 
-prometheus: 
+prometheus:
+  server:
+    extraArgs:
+      web.enable-lifecycle: ""
   #prometheus-node-exporter:
   #  enabled: true
   #  podAnnotations:
