@@ -86,6 +86,14 @@ experiment:
     #       service_name: recommendationservice,
     #       interval: 1s
     #     }
+    - increase_otel_metric_interval:
+        action: kubernetes_otel_metrics_interval
+        params: {
+          namespace: system-under-evaluation,
+          label_selector: app.kubernetes.io/component,
+          label: recommendationservice,
+          interval: 100ms,
+        }
   sue:
     compose: opentelemetry-demo/docker-compose.yml
     exclude: [loadgenerator]

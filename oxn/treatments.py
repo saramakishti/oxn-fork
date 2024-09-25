@@ -597,6 +597,91 @@ class MetricsExportIntervalTreatment(Treatment):
         return True
 
 
+class KubernetesMetricsExportIntervalTreatment(Treatment):
+    """
+    Modify the OTEL_METRICS_EXPORT interval for a given container
+
+    check rate(otelcol_exporter_sent_metric_points[30s]) to validate the change
+
+    config:
+        namespace: system-under-evaluation,
+        label_selector: app.kubernetes.io/component,
+        label: recommendationservice,
+        interval: 1s,
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+
+    def action(self):
+        return "kubernetes_otel_metrics_interval"
+
+    def preconditions(self) -> bool:
+        super().preconditions()
+        return True
+
+    def inject(self) -> None:
+        namespace = self.config.get("namespace")
+        label_selector = self.config.get("label_selector")
+        label = self.config.get("label")
+        interval_ms = self.config.get("interval_ms")
+
+        assert isinstance(self.orchestrator, KubernetesOrchestrator)
+
+        self.config["deployment"] = self.orchestrator.get_deployment(namespace, label_selector, label)
+        result = self.orchestrator.set_deployment_env_parameter(
+            deployment=self.config["deployment"],
+            environment_variable_name="OTEL_METRIC_EXPORT_INTERVAL",
+            environment_variable_value=str(int(interval_ms)),
+        )
+
+        time.sleep(5)
+
+        for x in range(0, 10):
+            if self.orchestrator.is_deployment_ready(self.config["deployment"]):
+                break
+            time.sleep(2)
+            logging.info(f"Waiting for deployment {self.config['deployment'].metadata.name} to be ready")
+
+
+    def clean(self) -> None:
+        # TODO: implement cleanup?
+        pass
+
+    def params(self) -> dict:
+        return {
+            "namespace": str,
+            "label_selector": str,
+            "label": str,
+            "interval": str,
+        }
+
+    def _validate_params(self) -> bool:
+        for key, value in self.params().items():
+            if key not in self.config:
+                self.messages.append(f"Parameter {key} has to be supplied")
+            if not isinstance(self.config[key], value):
+                self.messages.append(f"Parameter {key} has to be of type {str(value)}")
+        for key in self.config.items():
+            if key == "interval" and not validate_time_string(self.config[key]):
+                self.messages.append(
+                    f"Value for parameter {key} has to match {time_string_format_regex} for {self.treatment_type}"
+                )
+        return not self.messages
+
+    def _transform_params(self) -> None:
+        """Convert the provided time string into milliseconds"""
+        interval_s = time_string_to_seconds(self.config["interval"])
+        interval_ms = to_milliseconds(interval_s)
+        self.config["interval_ms"] = interval_ms
+
+    def is_runtime(self) -> bool:
+        return False
+    
+    def _validate_orchestrator(self) -> bool:
+        return super()._validate_orchestrator(["kubernetes"])
+
+
 class ProbabilisticSamplingTreatment(Treatment):
     """
     Add a probabilistic sampling policy to the opentelemetry collector

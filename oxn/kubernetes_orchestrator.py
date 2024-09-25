@@ -392,3 +392,72 @@ class KubernetesOrchestrator(Orchestrator):
                 message=f"Error while deleting pod {pod.metadata.name} in namespace {pod.metadata.namespace}: {e.body}",
                 explanation=str(e),
             )
+    def set_deployment_env_parameter(self, deployment: V1Deployment, environment_variable_name: str, environment_variable_value: str):
+        """
+        Set an environment variable for a deployment
+
+        Args:
+            deployment: The deployment to set the environment variable for
+            environment_variable_name: The name of the environment variable
+            environment_variable_value: The value of the environment variable
+
+
+        """
+        assert deployment is not None
+        assert deployment.spec is not None
+        assert deployment.metadata is not None
+        assert deployment.metadata.name is not None
+        assert deployment.metadata.namespace is not None
+        assert deployment.spec.template is not None
+        assert deployment.spec.template.spec is not None
+        assert deployment.spec.template.spec.containers is not None
+        assert environment_variable_name is not None
+        assert environment_variable_value is not None
+
+        container_bodies = []
+        containers = deployment.spec.template.spec.containers
+        for container in containers:
+            container_body = {
+                "name": container.name,
+                "env": [
+                    {
+                        "name": environment_variable_name,
+                        "value": environment_variable_value,
+                    }
+                ]
+            }
+            container_bodies.append(container_body)
+        
+        patch_body = {
+            "spec": {
+                "template": {
+                    "spec": {
+                        "containers": container_bodies
+                    }
+                }
+            }
+        }
+        
+        response = self.api_client.patch_namespaced_deployment(
+            name=deployment.metadata.name,
+            namespace=deployment.metadata.namespace,
+            body=patch_body,
+        )
+        return response
+    
+    def is_deployment_ready(self, deployment: V1Deployment) -> bool:
+        """
+        Check if a deployment is ready
+
+        Args:
+            deployment: The deployment to check
+
+        Returns:
+            True if the deployment is ready, False otherwise
+
+        """
+        assert deployment is not None
+        assert deployment.status is not None
+        assert deployment.status.ready_replicas is not None
+        assert deployment.status.replicas is not None
+        return deployment.status.ready_replicas == deployment.status.replicas
