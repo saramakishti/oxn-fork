@@ -380,10 +380,15 @@ class KubernetesOrchestrator(Orchestrator):
         assert pod.metadata is not None
         assert pod.metadata.name is not None
         assert pod.metadata.namespace is not None
-
-        response = self.kube_client.delete_namespaced_pod(
-            name=pod.metadata.name,
-            namespace=pod.metadata.namespace,
-            grace_period_seconds=0,
-        )
-        return response
+        try:
+            response = self.kube_client.delete_namespaced_pod(
+                name=pod.metadata.name,
+                namespace=pod.metadata.namespace,
+                grace_period_seconds=0,
+            )
+            return response
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while deleting pod {pod.metadata.name} in namespace {pod.metadata.namespace}: {e.body}",
+                explanation=str(e),
+            )
