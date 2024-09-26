@@ -188,15 +188,13 @@ syntactic_schema = schema.Schema(
         "experiment": {
             "version": str,
             "orchestrator": str,
-            schema.Optional("pods"): {
+            schema.Optional("services"): {
                 "jaeger": {
-                    "label_selector": str,
-                    "label": str,
+                    "name": str,
                     "namespace": str,
                 },
                 "prometheus": {
-                    "label_selector": str,
-                    "label": str,
+                    "name": str,
                     "namespace": str,
                 }
             },
@@ -243,8 +241,7 @@ syntactic_schema = schema.Schema(
                 ],
                 schema.Optional("locust_files"): list[str],
                 schema.Optional("target"): {
-                    "label_selector": str,
-                    "label": str,
+                    "name": str,
                     "namespace": str,
                     "port": int,
                 },

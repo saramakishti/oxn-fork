@@ -651,7 +651,7 @@ class KubernetesMetricsExportIntervalTreatment(Treatment):
         
         logging.info(f"Environment variable '{self.env_name} set to '{self.interval_ms}'ms for the deployment '{self.deployment.metadata.name}'.")
 
-        time.sleep(1)
+        time.sleep(3)
 
         for x in range(0, 10):
             if self.orchestrator.is_deployment_ready(self.deployment):

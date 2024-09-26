@@ -95,10 +95,9 @@ class MetricResponseVariable(ResponseVariable):
         Label a Prometheus dataframe. Note that Prometheus returns timestamps in seconds as a float
 
         """
-
-        predicate = (treatment_start <= self.data["timestamp"]) & (
-                self.data["timestamp"] <= treatment_end
-        )
+        
+        predicate = self.data["timestamp"].between(treatment_start, treatment_end)
+        
         self.data[label_column] = np.where(predicate, label, "NoTreatment")
 
     @staticmethod

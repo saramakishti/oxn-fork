@@ -56,7 +56,7 @@ class LocustFileLoadgenerator:
         
         if self.target:
             assert isinstance(self.orchestrator, KubernetesOrchestrator), "Orchestrator must be KubernetesOrchestrator if target is specified"
-            self.base_address = self.orchestrator.get_address_for_service(self.target["label_selector"], self.target["label"], self.target["namespace"])
+            self.base_address = self.orchestrator.get_address_for_service(name=self.target["name"], namespace=self.target["namespace"])
             self.port = self.target["port"]
             
         logger.info(f"Base address for load generation set to {self.base_address}:{self.port}")

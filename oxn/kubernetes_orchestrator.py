@@ -223,7 +223,7 @@ class KubernetesOrchestrator(Orchestrator):
             return 1, str(e)
                 
     
-    def get_address_for_service(self, label_selector: str, label: str, namespace: str) -> str:
+    def get_address_for_service(self, namespace: str, name: str) -> str:
         """
         Get the first address found for a service
 
@@ -236,13 +236,29 @@ class KubernetesOrchestrator(Orchestrator):
             The address of the service
 
         """
-        pods = self.kube_client.list_namespaced_pod(namespace, label_selector=f"{label_selector}={label}")
-        if not pods.items:
+        
+        service = self.kube_client.read_namespaced_service(namespace=namespace, name=name)
+        if not service:
             raise OrchestratorResourceNotFoundException(
-                message=f"No pods found for service {label}",
-                explanation="No pods found for the given service",
+                message=f"No service found for service {label}",
+                explanation="No service found for the given service",
             )
-        return pods.items[0].status.pod_ip
+        cluster_ip = service.spec.cluster_ip
+        
+        if cluster_ip is None or cluster_ip == "None":  
+            logging.info(f"Service {name} in namespace {namespace} has no cluster IP. Falling back to pod IP by selecting first pod and receiving its IP")
+            # fall back to pod IP
+            name_label_of_service = service.metadata.labels["app.kubernetes.io/name"]
+            pods = self.kube_client.list_namespaced_pod(namespace=namespace, label_selector=f"app.kubernetes.io/name={name_label_of_service}")
+            if not pods.items:
+                raise OrchestratorResourceNotFoundException(
+                    message=f"No pods found for service {label}",
+                    explanation="No pods found for the given service",
+                )
+            cluster_ip = pods.items[0].status.pod_ip
+        
+        return cluster_ip
+        
     
     def get_jaeger_address(self) -> str:
         """
@@ -253,15 +269,13 @@ class KubernetesOrchestrator(Orchestrator):
 
         """
         assert self.experiment_config["experiment"] is not None
-        assert self.experiment_config["experiment"]["pods"] is not None
-        assert self.experiment_config["experiment"]["pods"]["jaeger"] is not None
+        assert self.experiment_config["experiment"]["services"] is not None
+        assert self.experiment_config["experiment"]["services"]["jaeger"] is not None
         
-        jaeger_label_selector = self.experiment_config["experiment"]["pods"]["jaeger"]["label_selector"]
-        jaeger_label = self.experiment_config["experiment"]["pods"]["jaeger"]["label"]
-        jaeger_namespace = self.experiment_config["experiment"]["pods"]["jaeger"]["namespace"]
+        jaeger_name = self.experiment_config["experiment"]["services"]["jaeger"]["name"]
+        jaeger_namespace = self.experiment_config["experiment"]["services"]["jaeger"]["namespace"]
         return self.get_address_for_service(
-            label_selector=jaeger_label_selector,
-            label=jaeger_label,
+            name=jaeger_name,
             namespace=jaeger_namespace,
         )
     
@@ -275,15 +289,13 @@ class KubernetesOrchestrator(Orchestrator):
         """
         
         assert self.experiment_config["experiment"] is not None
-        assert self.experiment_config["experiment"]["pods"] is not None
-        assert self.experiment_config["experiment"]["pods"]["prometheus"] is not None
+        assert self.experiment_config["experiment"]["services"] is not None
+        assert self.experiment_config["experiment"]["services"]["prometheus"] is not None
         
-        prometheus_label_selector = self.experiment_config["experiment"]["pods"]["prometheus"]["label_selector"]
-        prometheus_label = self.experiment_config["experiment"]["pods"]["prometheus"]["label"]
-        prometheus_namespace = self.experiment_config["experiment"]["pods"]["prometheus"]["namespace"]
+        prometheus_name = self.experiment_config["experiment"]["services"]["prometheus"]["name"]
+        prometheus_namespace = self.experiment_config["experiment"]["services"]["prometheus"]["namespace"]
         return self.get_address_for_service(
-            label_selector=prometheus_label_selector,
-            label=prometheus_label,
+            name=prometheus_name,
             namespace=prometheus_namespace,
         )
     
@@ -417,31 +429,44 @@ class KubernetesOrchestrator(Orchestrator):
         assert environment_variable_value is not None
         
         new_env_var = client.V1EnvVar(name=environment_variable_name, value=environment_variable_value)
-
-        container_bodies = []
-        containers = deployment.spec.template.spec.containers
-        container = containers[0]
-
-        if container.env is None:
-            container.env = []
-
-        # check if env variable already exists and update it
-        is_updated = False
-        for env_var in container.env:
-            if env_var.name == environment_variable_name:
-                env_var.value = environment_variable_value
-                is_updated = True
-                break
-        if not is_updated:
-            container.env.append(new_env_var)
         
-        
-        response = self.api_client.patch_namespaced_deployment(
-            name=deployment.metadata.name,
-            namespace=deployment.metadata.namespace,
-            body=deployment,
+        # repeate until it is working
+        for i in range(0, 10):
+            try:
+                deployment = self.get_deployment(namespace=deployment.metadata.namespace, label_selector="app.kubernetes.io/name", label=deployment.metadata.name)
+
+                container_bodies = []
+                containers = deployment.spec.template.spec.containers
+                container = containers[0]
+
+                if container.env is None:
+                    container.env = []
+
+                # check if env variable already exists and update it
+                is_updated = False
+                for env_var in container.env:
+                    if env_var.name == environment_variable_name:
+                        env_var.value = environment_variable_value
+                        is_updated = True
+                        break
+                if not is_updated:
+                    container.env.append(new_env_var)
+                    
+                response = self.api_client.patch_namespaced_deployment(
+                    name=deployment.metadata.name,
+                    namespace=deployment.metadata.namespace,
+                    body=deployment,
+                )
+                return response
+            except ApiException as e:
+                logging.error(f"Error while updating deployment {deployment.metadata.name} in namespace {deployment.metadata.namespace}: {e.body}. Waiting for 1 second and retrying. Retry {i}")
+                time.sleep(1)
+                
+        raise OrchestratorException(
+            message=f"Error while updating deployment {deployment.metadata.name} in namespace {deployment.metadata.namespace}",
+            explanation="Error while updating deployment",
         )
-        return response
+        
     
     def get_deployment_env_parameters(self, deployment: V1Deployment) -> List[client.V1EnvVar]:
         """
@@ -615,8 +640,9 @@ class KubernetesOrchestrator(Orchestrator):
         for i in range(0, 10):
             if self.is_deployment_ready(deployment):
                 break
-            time.sleep(1)
-            logging.info(f"Waiting for deployment {deployment.metadata.name} to be ready")
+            time.sleep(i * 2)
+            logging.info(f"Waiting for deployment {deployment.metadata.name} to be ready after restart. Retry {i}")
             
+        logging.info(f"Deployment {deployment.metadata.name} is ready after restart")
             
         

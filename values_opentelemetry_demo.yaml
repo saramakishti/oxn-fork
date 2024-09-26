@@ -20,6 +20,13 @@ prometheus:
   server:
     extraArgs:
       web.enable-lifecycle: ""
+    persistentVolume:
+      enabled: true
+      storageClass: "openebs-hostpath"
+      accessModes:
+        - ReadWriteOnce
+      size: 8Gi
+        
   #prometheus-node-exporter:
   #  enabled: true
   #  podAnnotations:

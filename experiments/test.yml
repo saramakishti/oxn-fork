@@ -2,14 +2,12 @@
 experiment:
   version: 0.0.1
   orchestrator: kubernetes
-  pods:
+  services:
     jaeger: 
-      label_selector: app.kubernetes.io/name
-      label: jaeger
+      name: astronomy-shop-jaeger-query
       namespace: system-under-evaluation
     prometheus:
-      label_selector: app.kubernetes.io/name
-      label: prometheus
+      name: astronomy-shop-prometheus-server
       namespace: system-under-evaluation
   responses:
     - frontend_traces:
@@ -29,7 +27,12 @@ experiment:
         metric_name: sum(rate(node_cpu_seconds_total{}[1m])) #Change back, only placeholder       sum(rate(container_cpu_usage_seconds_total{namespace="default"}[1m]))
         left_window: 240s
         right_window: 24s
-        step: 1
+    #- system_CPU:
+    #    type: metric
+    #    metric_name: sum(rate(node_cpu_seconds_total{}[1m])) #Change back, only placeholder       sum(rate(container_cpu_usage_seconds_total{namespace="default"}[1m]))
+    #    left_window: 24s
+    #    right_window: 24s
+    #    step: 1
     - latency_frontend_95_percentile:
         type: metric
         metric_name: histogram_quantile(0.50, sum(rate(duration_milliseconds_bucket{service_name="frontend"}[3m])) by (le))
@@ -94,14 +97,14 @@ experiment:
           label: recommendationservice,
           interval: 100ms,
         }
-    # reloading the prometheus config is not as trivial as it seems to be
-    #- prometheus_scrape_interval:
-    #    action: kubernetes_prometheus_interval
-    #    params: {
-    #      interval: 15s,
-    #      evaluation_interval: 15s,
-    #      scrape_timeout: 10s,
-    #    }
+     #reloading the prometheus config is not as trivial as it seems to be
+    - prometheus_scrape_interval:
+        action: kubernetes_prometheus_interval
+        params: {
+          interval: 5s,
+          evaluation_interval: 5s,
+          scrape_timeout: 3s,
+        }
   sue:
     compose: opentelemetry-demo/docker-compose.yml
     exclude: [loadgenerator]
@@ -124,7 +127,6 @@ experiment:
       { path: locust/locust_otel_demo.py },
       ]
     target:
-      label_selector: app.kubernetes.io/component
-      label: frontendproxy
+      name: astronomy-shop-frontendproxy
       namespace: system-under-evaluation
       port: 8080
