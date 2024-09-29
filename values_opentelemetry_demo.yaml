@@ -15,6 +15,12 @@ components:
     resources:
       limits:
         memory: 150Mi
+  loadgenerator:
+    enabled: false
+  checkoutservice:
+    resources:
+      limits:
+        memory: 150Mi
 
 prometheus:
   server:
@@ -26,6 +32,9 @@ prometheus:
       accessModes:
         - ReadWriteOnce
       size: 8Gi
+    resources:
+        limits:
+          memory: 1500Mi
         
   #prometheus-node-exporter:
   #  enabled: true

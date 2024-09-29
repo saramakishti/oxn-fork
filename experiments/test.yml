@@ -14,34 +14,62 @@ experiment:
     - frontend_traces:
         type: trace
         service_name: frontend 
-        left_window: 24s
-        right_window: 24s
-        limit: 100000
+        left_window: 240s
+        right_window: 240s
+        limit: 1000000
     - recommendation_traces:
         type: trace
         service_name: recommendationservice 
-        left_window: 24s
-        right_window: 24s
-        limit: 100000
+        left_window: 240s
+        right_window: 240s
+        limit: 1000000
     - system_CPU:
         type: metric
         metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation"}[1m]))
-        left_window: 24s
-        right_window: 24s
+        left_window: 240s
+        right_window: 240s
+        step: 1
+        target: oxn
+    - recommendation_deployment_CPU:
+        type: metric
+        metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation", pod=~"astronomy-shop-recommendationservice.*"}[90s])) by (pod)
+        left_window: 240s
+        right_window: 240s
+        step: 1
+        target: oxn
+    - recommendationservice_kepler_package_joules:
+        type: metric
+        metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_package_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[1m]))
+        left_window: 240s
+        right_window: 240s
+        step: 1
+        target: oxn
+    - recommendationservice_kepler_dram_joules:
+        type: metric
+        metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_dram_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[1m]))
+        left_window: 240s
+        right_window: 240s
         step: 1
         target: oxn
     - latency_frontend_95_percentile:
         type: metric
-        metric_name: histogram_quantile(0.50, sum(rate(duration_milliseconds_bucket{service_name="frontend"}[3m])) by (le))
-        left_window: 24s
-        right_window: 24s
+        metric_name: histogram_quantile(0.50, sum(rate(duration_milliseconds_bucket{service_name="frontend"}[90s])) by (le))
+        left_window: 240s
+        right_window: 240s
+        step: 1
+        target: sue
+    - latency_recommendationservice_95_percentile:
+        type: metric
+        metric_name: histogram_quantile(0.50, sum(rate(duration_milliseconds_bucket{service_name="recommendationservice"}[90s])) by (le))
+        left_window: 240s
+        right_window: 240s
         step: 1
         target: sue
     - recommendations_total:
         type: metric
-        metric_name: increase(app_recommendations_counter_total[90s])
-        left_window: 24s
-        right_window: 24s
+        metric_name: increase(app_recommendations_counter_total[1m])
+        left_window: 240s
+        right_window: 240s
         step: 1
         target: sue
   treatments:
@@ -53,14 +81,14 @@ experiment:
     #      label: recommendationservice,
     #      amount_to_kill: 1,
     #    }
-    - stop_loadgen_deployment:
-        action: scale_deployment
-        params: {
-          namespace: system-under-evaluation,
-          label_selector: app.kubernetes.io/component,
-          label: loadgenerator,
-          scale_to: 0,
-        }
+    #- stop_loadgen_deployment:
+    #    action: scale_deployment
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/component,
+    #      label: loadgenerator,
+    #      scale_to: 0,
+    #    }
     #- add_security_context:
     #    action: security_context_kubernetes
     #    params: {
@@ -78,7 +106,7 @@ experiment:
           #service_name: node-exporter,
           delay_time: 45ms,
           delay_jitter: 45ms,
-          duration: 60s,
+          duration: 3m,
           interface: eth0,
         }
     # - interval:
@@ -94,7 +122,7 @@ experiment:
     #      namespace: system-under-evaluation,
     #      label_selector: app.kubernetes.io/component,
     #      label: recommendationservice,
-    #      interval: 10ms,
+    #      interval: 15s,
     #    }
      #reloading the prometheus config is not as trivial as it seems to be
     #- prometheus_scrape_interval:
@@ -110,7 +138,7 @@ experiment:
     required: [{namespace: system-under-evaluation, name: astronomy-shop-prometheus-server}] # {namespace: monitoring, name: not-running-service}
     #required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}]
   loadgen:
-    run_time: 2m
+    run_time: 10m
     #stages: 
     #- {duration: 20, users: 10, spawn_rate: 5}
     #- {duration: 600, users: 50, spawn_rate: 10}

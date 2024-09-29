@@ -94,7 +94,7 @@ class LocustFileLoadgenerator:
         assert self.env is not None, "Locust environment must be initialized before starting"
         assert self.env.runner is not None, "Locust runner must be initialized before starting"
         
-        self.env.runner.start(100, 5.0)
+        self.env.runner.start(500, 50.0)
         self.greenlets.spawn(stats_printer(self.env.stats))
         self.greenlets.spawn(stats_history, self.env.runner)
 
