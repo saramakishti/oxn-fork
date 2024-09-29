@@ -5,8 +5,11 @@ Connection: Used by responses.py and validation.py to gather metrics and validat
 
 Wrapper around the Prometheus HTTP API"""
 import logging
+from math import e
 import requests
 from requests.adapters import Retry, HTTPAdapter
+
+from .kubernetes_orchestrator import KubernetesOrchestrator
 
 from .models.orchestrator import Orchestrator
 
@@ -19,7 +22,7 @@ logger = logging.getLogger(__name__)
 
 
 class Prometheus:
-    def __init__(self, orchestrator: Orchestrator):
+    def __init__(self, orchestrator: Orchestrator, target: str = "sue"):
         assert orchestrator is not None
         self.orchestrator = orchestrator
         self.session = requests.Session()
@@ -27,7 +30,11 @@ class Prometheus:
             total=5, backoff_factor=0.1, status_forcelist=[500, 502, 503, 504]
         )
         self.session.mount("http://", HTTPAdapter(max_retries=retries))
-        address = orchestrator.get_prometheus_address()
+        address = None
+        if isinstance(orchestrator, KubernetesOrchestrator):
+            address = orchestrator.get_prometheus_address(target)
+        else:
+            address = orchestrator.get_prometheus_address()
         self.base_url = f"http://{address}:9090/api/v1/"
         self.endpoints = {
             "range_query": "query_range",

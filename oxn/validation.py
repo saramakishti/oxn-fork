@@ -162,6 +162,7 @@ class SemanticValidator:
 
 metric_response_schema = {
     str: {
+        "target": str,
         "metric_name": str,
         "type": "metric",
         "step": int,
@@ -193,10 +194,15 @@ syntactic_schema = schema.Schema(
                     "name": str,
                     "namespace": str,
                 },
-                "prometheus": {
-                    "name": str,
-                    "namespace": str,
-                }
+                # prometheus is a list containing multiple dicts with the paramters name, namespace and target
+                "prometheus": [
+                    {
+                        "name": str,
+                        "namespace": str,
+                        "target": str,
+                    }
+                ],
+                
             },
             "responses": [
                 schema.Or(metric_response_schema, trace_response_schema),

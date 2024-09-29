@@ -116,8 +116,8 @@ class KubernetesOrchestrator(Orchestrator):
 
         if not pods.items:
             raise OrchestratorResourceNotFoundException(
-                message=f"No pods found for service {label}",
-                explanation="No pods found for the given service",
+                message=f"No pods found with the given label selector {label_selector}={label}",
+                explanation="No pods found with the given label selector {label_selector}={label}",
             )
         
         # Execute the command on each pod
@@ -125,6 +125,13 @@ class KubernetesOrchestrator(Orchestrator):
             try:
                 exec_command = command
                 assert pod.metadata.labels[label_selector]
+                
+                container = None
+                if pod.spec.containers and pod.spec.containers.__len__() > 1:
+                    logging.warning(f"Pod {pod.metadata.name} in namespace {label} has more than one container. Using the first container to execute the command. (Container: {pod.spec.containers[0].name})")
+                    container = pod.spec.containers[0]
+                else:
+                    container = pod.spec.containers[0]
 
                 wrapped_command = ['sh', '-c', f"{' '.join(exec_command)}; echo $?"]
     
@@ -132,7 +139,7 @@ class KubernetesOrchestrator(Orchestrator):
                                 name=pod.metadata.name,
                                 namespace=pod.metadata.namespace,
                                 command=wrapped_command,
-                                container=label,
+                                container=container.name,
                                 stderr=True,
                                 stdin=False,
                                 stdout=True,
@@ -140,9 +147,15 @@ class KubernetesOrchestrator(Orchestrator):
                 
                 if response == "0":
                     return 0, "Success"
+                
+                # if response includes "not found" or "no such file or directory" then the command was not found
+                if "not found" in response or "no such file or directory" in response:
+                    return -1, f"Command not found: {' '.join(exec_command)}"
+                    
                 # Split the response to separate the command output and exit status
                 response_lines = response.split('\n')
                 exit_status_line = response_lines[-2].strip()
+                print(exit_status_line)
                 exit_status = int(exit_status_line)
                 command_output = '\n'.join(response_lines[:-2])
                 
@@ -279,7 +292,7 @@ class KubernetesOrchestrator(Orchestrator):
             namespace=jaeger_namespace,
         )
     
-    def get_prometheus_address(self) -> str:
+    def get_prometheus_address(self, target) -> str:
         """
         Get the address of the Prometheus service
 
@@ -292,11 +305,23 @@ class KubernetesOrchestrator(Orchestrator):
         assert self.experiment_config["experiment"]["services"] is not None
         assert self.experiment_config["experiment"]["services"]["prometheus"] is not None
         
-        prometheus_name = self.experiment_config["experiment"]["services"]["prometheus"]["name"]
-        prometheus_namespace = self.experiment_config["experiment"]["services"]["prometheus"]["namespace"]
-        return self.get_address_for_service(
-            name=prometheus_name,
-            namespace=prometheus_namespace,
+        prometheus_configs = self.experiment_config["experiment"]["services"]["prometheus"]
+               
+        for prometheus_config in prometheus_configs:
+            assert prometheus_config["target"] is not None
+            if prometheus_config["target"] == target:
+                assert prometheus_config["name"] is not None
+                assert prometheus_config["namespace"] is not None
+                prometheus_name = prometheus_config["name"]
+                prometheus_namespace = prometheus_config["namespace"]
+                return self.get_address_for_service(
+                    name=prometheus_name,
+                    namespace=prometheus_namespace,
+                )
+        
+        raise OrchestratorException(
+            message=f"No Prometheus configuration found for target {target}",
+            explanation="No Prometheus configuration found for the given target",
         )
     
     def get_orchestrator_type(self) -> str:
@@ -377,8 +402,8 @@ class KubernetesOrchestrator(Orchestrator):
         pods = self.kube_client.list_namespaced_pod(namespace, label_selector=f"{label_selector}={label}")
         if not pods.items:
             raise OrchestratorResourceNotFoundException(
-                message=f"No pods found for service {label}",
-                explanation="No pods found for the given service",
+                message=f"No pods found with the given label selector {label_selector}={label}",
+                explanation="No pods found with the given label selector {label_selector}={label}",
             )
         return pods.items
     

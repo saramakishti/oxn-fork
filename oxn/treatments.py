@@ -1079,10 +1079,19 @@ class NetworkDelayTreatment(Treatment):
             )
             logger.info(f"Probed pods in {namespace} with {label_selector}={label} for tc with result {status_code}")
             if status_code > 1 or status_code < 0:
-                self.messages.append(
-                    f"Not all pods in {namespace} with {label_selector}={label} does not have tc installed which is required for {self.treatment_type}. Please install "
-                    "package iproute2 in the container"
+                install_command = ["apt", "update", "&&", "apt", "install", "iproute2", "-y"]
+                status_code_2, _ = self.orchestrator.execute_console_command_on_all_matching_pods(
+                    namespace=namespace,
+                    label_selector=label_selector,
+                    label=label,
+                    command=install_command
                 )
+                if status_code_2 > 1 or status_code_2 < 0:
+                    self.messages.append(
+                        f"Not all pods in {namespace} with {label_selector}={label} does not have tc installed which is required for {self.treatment_type}. Please install "
+                        "package iproute2 in the container"
+                    )
+                    return False
                 return False
             return True
         except OrchestratorResourceNotFoundException as e:
@@ -1716,13 +1725,6 @@ class PrometheusIntervalTreatment(Treatment):
 class KubernetesPrometheusIntervalTreatment(Treatment):
     """
     Treatment to change the global scrape interval of a Prometheus instance.
-
-    Prometheus is able to reload its configuration at runtime on a post request to  /-/reload
-    (cf. https://prometheus.io/docs/prometheus/latest/configuration/configuration/),
-    therefore we only need as a parameter the path to the prometheus configuration file
-    and the new scrape interval. The treatment memorizes the old scrape_interval for the cleanup method and
-    writes the new scrape interval to the config.
-
 
     """
 

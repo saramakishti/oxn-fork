@@ -29,6 +29,7 @@ class MetricResponseVariable(ResponseVariable):
             experiment_start: float,
             experiment_end: float,
             description: dict,
+            target: str,
     ):
         super().__init__(
             experiment_start=experiment_start, experiment_end=experiment_end
@@ -53,7 +54,7 @@ class MetricResponseVariable(ResponseVariable):
             description["right_window"]
         )
         """Timestamp of the end of the observation period relative to experiment end"""
-        self.prometheus = Prometheus(orchestrator=self.orchestrator)
+        self.prometheus = Prometheus(orchestrator=self.orchestrator, target=target)
         """Prometheus API to fetch metric data represented by this response variable"""
 
     def __repr__(self):

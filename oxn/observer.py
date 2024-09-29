@@ -50,6 +50,7 @@ class Observer:
             description=response_description,
             experiment_start=self.experiment_start,
             experiment_end=self.experiment_end,
+            target=response_description["target"],
         )
         self._response_variables[response_variable.name] = response_variable
 
