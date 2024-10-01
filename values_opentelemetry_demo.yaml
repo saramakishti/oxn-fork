@@ -34,6 +34,20 @@ components:
       limits:
         memory: 150Mi
 
+opentelemetry-collector:
+    config:
+      processors:
+        probabilistic_sampler:
+          sampling_percentage: 50
+      service:
+        pipelines:
+          traces:
+            processors:
+            - memory_limiter
+            - resource
+            - transform
+            - batch
+            - probabilistic_sampler
 prometheus:
   server:
     extraArgs:
