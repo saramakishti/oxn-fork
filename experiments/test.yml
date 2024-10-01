@@ -51,16 +51,23 @@ experiment:
         right_window: 240s
         step: 1
         target: oxn
+    - recommendationservice_kepler_other_joules:
+        type: metric
+        metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_other_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[1m]))
+        left_window: 240s
+        right_window: 240s
+        step: 1
+        target: oxn
     - latency_frontend_95_percentile:
         type: metric
-        metric_name: histogram_quantile(0.50, sum(rate(duration_milliseconds_bucket{service_name="frontend"}[90s])) by (le))
+        metric_name: histogram_quantile(0.95, sum(rate(duration_milliseconds_bucket{service_name="frontend"}[90s])) by (le))
         left_window: 240s
         right_window: 240s
         step: 1
         target: sue
     - latency_recommendationservice_95_percentile:
         type: metric
-        metric_name: histogram_quantile(0.50, sum(rate(duration_milliseconds_bucket{service_name="recommendationservice"}[90s])) by (le))
+        metric_name: histogram_quantile(0.95, sum(rate(duration_milliseconds_bucket{service_name="recommendationservice"}[90s])) by (le))
         left_window: 240s
         right_window: 240s
         step: 1
@@ -106,7 +113,7 @@ experiment:
           #service_name: node-exporter,
           delay_time: 45ms,
           delay_jitter: 45ms,
-          duration: 3m,
+          duration: 10m,
           interface: eth0,
         }
     # - interval:
