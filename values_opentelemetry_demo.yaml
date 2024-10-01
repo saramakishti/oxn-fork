@@ -29,7 +29,7 @@ components:
         memory: 150Mi
   loadgenerator:
     enabled: false
-  checkoutservice:
+  checkoutService:
     resources:
       limits:
         memory: 150Mi
