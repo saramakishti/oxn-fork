@@ -5,18 +5,18 @@ jaeger:
         memory: 5Gi
       limits:
         memory: 5Gi
-    args:
-      - --query.base-path=/jaeger/ui
-      - --prometheus.server-url=http://{{ include "otel-demo.name" . }}-prometheus-server:9090
-      - --prometheus.query.normalize-calls=true
-      - --prometheus.query.normalize-duration=true
-  storage:
-    badger:
-      ephemeral: false
-      persistence:
-        mountPath: /mnt/data
-        useExistingPvcName: "jaeger-pvc"
-    type: badger
+    # args:
+    #   - --query.base-path=/jaeger/ui
+    #   - --prometheus.server-url=http://{{ include "otel-demo.name" . }}-prometheus-server:9090
+    #   - --prometheus.query.normalize-calls=true
+    #   - --prometheus.query.normalize-duration=true
+  # storage:
+  #   badger:
+  #     ephemeral: false
+  #     persistence:
+  #       mountPath: /mnt/data
+  #       useExistingPvcName: "jaeger-pvc"
+  #   type: badger
 
 components:
   flagd:
@@ -38,7 +38,8 @@ opentelemetry-collector:
     config:
       processors:
         probabilistic_sampler:
-          sampling_percentage: 50
+          sampling_percentage: 1
+          hash_seed: 22
       service:
         pipelines:
           traces:

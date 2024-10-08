@@ -34,7 +34,8 @@ from .treatments import (
     TailSamplingTreatment,
     KillTreatment,
     MetricsExportIntervalTreatment,
-    ProbabilisticSamplingTreatment
+    ProbabilisticSamplingTreatment,
+    KubernetesProbabilisticHeadSamplingTreatment
 )
 from . import utils
 from .observer import Observer
@@ -71,6 +72,7 @@ class ExperimentRunner:
         "kubernetes_prometheus_interval": KubernetesPrometheusIntervalTreatment,
         "tail": TailSamplingTreatment,
         "probl": ProbabilisticSamplingTreatment,
+        "kube_probl": KubernetesProbabilisticHeadSamplingTreatment,
         "otel_metrics_interval": MetricsExportIntervalTreatment,
         "kubernetes_otel_metrics_interval": KubernetesMetricsExportIntervalTreatment,
         "scale_deployment": DeploymentScaleTreatment,

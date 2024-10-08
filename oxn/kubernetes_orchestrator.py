@@ -636,6 +636,96 @@ class KubernetesOrchestrator(Orchestrator):
         scrape_timeout = prometheus_config['global']['scrape_timeout']
 
         return scrape_interval, evaluation_interval, scrape_timeout
+    
+    def get_otel_collector_probabilistic_sampling_values(self) -> Tuple[str, str]:
+        """
+        Get the OpenTelemetry Collector probabilistic sampling values
+
+        Returns:
+            A tuple of the sampling rate and hash seed
+
+        """
+
+        configmap_name = "astronomy-shop-otelcol"
+        
+        try:
+            configmap = self.kube_client.read_namespaced_config_map(name=configmap_name, namespace="system-under-evaluation")
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while reading ConfigMap {configmap_name} in namespace system-under-evaluation: {e.body}",
+                explanation=str(e),
+            )
+            
+        assert configmap is not None
+        assert isinstance(configmap, client.V1ConfigMap)
+        assert configmap.data is not None
+        
+        otel_collector_config_yaml = configmap.data.get('relay')
+
+        if not otel_collector_config_yaml:
+            raise OrchestratorException(
+                message="relay.yaml not found in ConfigMap",
+                explanation="relay.yaml not found in ConfigMap",
+            )
+
+        otel_collector_config = yaml.safe_load(otel_collector_config_yaml)
+
+        sampling_rate = otel_collector_config['processors']['probabilistic_sampler']['sampling_percentage']
+        hash_seed = otel_collector_config['processors']['probabilistic_sampler']['hash_seed']
+
+        return sampling_rate, hash_seed
+    
+    def set_otel_collector_probabilistic_sampling_values(self, sampling_percentage, hash_seed):
+        """
+        Set the OpenTelemetry Collector probabilistic sampling values
+
+        Args:
+            sampling_percentage: The sampling percentage for the head based probabilistic sampler between 0 and 100
+            hash_seed: The hash seed
+
+        """
+
+       
+        
+        configmap_name = "astronomy-shop-otelcol"
+        
+        try:
+            configmap = self.kube_client.read_namespaced_config_map(name=configmap_name, namespace="system-under-evaluation")
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while reading ConfigMap {configmap_name} in namespace system-under-evaluation: {e.body}",
+                explanation=str(e),
+            )
+            
+        assert configmap is not None
+        assert isinstance(configmap, client.V1ConfigMap)
+        assert configmap.data is not None
+        
+        otel_collector_config_yaml = configmap.data.get('relay')
+
+        if not otel_collector_config_yaml:
+            raise OrchestratorException(
+                message="relay not found in ConfigMap",
+                explanation="relay not found in ConfigMap",
+            )
+
+        otel_collector_config = yaml.safe_load(otel_collector_config_yaml)
+
+        otel_collector_config['processors']['probabilistic_sampler']['sampling_percentage'] = sampling_percentage
+        otel_collector_config['processors']['probabilistic_sampler']['hash_seed'] = hash_seed
+
+        updated_otel_collector_config_yaml = yaml.dump(otel_collector_config, default_flow_style=False)
+
+        configmap.data['relay'] = updated_otel_collector_config_yaml
+        
+        try:
+            self.kube_client.patch_namespaced_config_map(name=configmap_name, namespace="system-under-evaluation", body=configmap)
+            logging.info(f"ConfigMap {configmap_name} updated successfully.")
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while updating ConfigMap {configmap_name} in namespace system-under-evaluation: {e.body}",
+                explanation=str(e),
+            )
 
     def restart_pods_of_deployment(self, deployment: V1Deployment):
         """
@@ -652,16 +742,27 @@ class KubernetesOrchestrator(Orchestrator):
         assert deployment.spec is not None
         assert deployment.spec.selector is not None
         assert deployment.spec.selector.match_labels is not None
-    
-        
+
+        # Extract the label selector from the deployment spec
+        label_selector = deployment.spec.selector.match_labels
+        label_selector_str = ','.join([f"{key}={value}" for key, value in label_selector.items()])
+
+      # List all pods with the label selector
         pods = self.kube_client.list_namespaced_pod(
-            namespace=deployment.metadata.namespace,
-            label_selector="app.kubernetes.io/name=prometheus" # TODO: make this more generic
-        )
+            namespace=deployment.metadata.namespace, 
+            label_selector=label_selector_str)
+
+        if not pods.items:
+            raise OrchestratorResourceNotFoundException(
+                message=f"No pods found for deployment {deployment.metadata.name}",
+                explanation="No pods found for the given deployment",
+            )
+        
         for pod in pods.items:
             self.kill_pod(pod)
+            logging.info(f"Pod {pod.metadata.name} in namespace {deployment.metadata.namespace} has been killed because of restart")
             
-        time.sleep(1)
+        time.sleep(4)
         for i in range(0, 10):
             if self.is_deployment_ready(deployment):
                 break
