@@ -419,6 +419,10 @@ class Interaction:
         response_df = self.response_data
         response_df.start_time = pd.to_datetime(response_df.start_time, unit="us")
         response_df.end_time = pd.to_datetime(response_df.end_time, unit="us")
+
+
+        # all values are in microseconds, convert to milliseconds
+        response_df.duration = response_df.duration / 1000
         
         if color_services:
             sns.scatterplot(ax=ax, x=response_df.start_time, y=response_df.duration, hue=response_df.service_name)
@@ -455,7 +459,7 @@ class Interaction:
         ax.set_xticklabels(tick_labels, rotation=90)  # Rotate x-axis labels by 90 degrees
 
         # Set labels and title
-        ax.set(xlabel="Time", ylabel="Duration [us]", title=f"Trace Duration ({self.response_name} \n {self.treatment_name})")
+        ax.set(xlabel="Time", ylabel="Duration [ms]", title=f"Trace Duration ({self.response_name} \n {self.treatment_name})")
 
         # Remove top and right spines
         sns.despine(ax=ax)
