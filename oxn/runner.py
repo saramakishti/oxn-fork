@@ -25,8 +25,9 @@ from .treatments import (
     KubernetesApplySecurityContextTreatment,
     KubernetesKillTreatment,
     KubernetesMetricsExportIntervalTreatment,
+    KubernetesNetworkDelayTreatment,
+    KubernetesNetworkPacketLossTreatment,
     KubernetesPrometheusIntervalTreatment,
-    NetworkDelayTreatment,
     PauseTreatment,
     PacketLossTreatment,
     PrometheusIntervalTreatment,
@@ -63,10 +64,11 @@ class ExperimentRunner:
         "kill": KillTreatment,
         "pause": PauseTreatment,
         "loss": PacketLossTreatment,
+        "kubernetes_loss": KubernetesNetworkPacketLossTreatment,
         "empty": EmptyTreatment,
         "empty_kubernetes": EmptyKubernetesTreatment,
         "empty_docker_compose": EmptyDockerComposeTreatment,
-        "delay": NetworkDelayTreatment,
+        "delay": KubernetesNetworkDelayTreatment,
         "stress": StressTreatment,
         "sampling": PrometheusIntervalTreatment,
         "kubernetes_prometheus_interval": KubernetesPrometheusIntervalTreatment,
@@ -78,6 +80,7 @@ class ExperimentRunner:
         "scale_deployment": DeploymentScaleTreatment,
         "security_context_kubernetes": KubernetesApplySecurityContextTreatment,
         "kubernetes_kill": KubernetesKillTreatment,
+        
     }
 
     def __init__(

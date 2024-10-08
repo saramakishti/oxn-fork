@@ -840,7 +840,7 @@ class KubernetesProbabilisticHeadSamplingTreatment(Treatment):
         
         self.initial_sampling_percentage, self.initial_hash_seed = self.orchestrator.get_otel_collector_probabilistic_sampling_values()
         self.orchestrator.set_otel_collector_probabilistic_sampling_values(sampling_percentage=self.config.get("sampling_percentage"), hash_seed=self.config.get("hash_seed"))
-        logging.info(f"Set otel collectors probabilistic sampling rate to {self.config.get('sampling_percentage')} and hash seed to {self.config.get('hash_seed')}")
+        logging.info(f"Set otel collectors probabilistic sampling rate {self.initial_sampling_percentage} -> {self.config.get('sampling_percentage')} and hash seed {self.initial_hash_seed} -> {self.config.get('hash_seed')}")
 
 
          # TODO: it seams as there might be a way to reload config maps without restarting the pods in some cases. This should be investigated (https://kubernetes.io/docs/concepts/configuration/configmap/#mounted-configmaps-are-updated-automatically)
@@ -853,7 +853,7 @@ class KubernetesProbabilisticHeadSamplingTreatment(Treatment):
         assert isinstance(self.orchestrator, KubernetesOrchestrator)
 
         self.orchestrator.set_otel_collector_probabilistic_sampling_values(sampling_percentage=self.initial_sampling_percentage, hash_seed= self.initial_hash_seed)
-        logging.info(f"Reset otel collectors probabilistic sampling rate to {self.initial_sampling_percentage} and hash seed to {self.initial_hash_seed}")
+        logging.info(f"Reset otel collectors probabilistic sampling rate  {self.config.get('sampling_percentage')} -> {self.initial_sampling_percentage} and hash seed to {self.config.get('hash_seed')} -> {self.initial_hash_seed}")
 
          # TODO: it seams as there might be a way to reload config maps without restarting the pods in some cases. This should be investigated (https://kubernetes.io/docs/concepts/configuration/configmap/#mounted-configmaps-are-updated-automatically)
         self.orchestrator.restart_pods_of_deployment(self.deployment)
@@ -879,6 +879,8 @@ class KubernetesProbabilisticHeadSamplingTreatment(Treatment):
                 self.messages.append(
                     f"Parameter {key} has to be between 0 and 100 for {self.treatment_type}"
                 )
+            if key == "sampling_percentage" and self.config[key] > 20:
+               logging.warning(f"Sampling percentage is set to {self.config[key]}. High sampling rates can lead to high costs and performance issues and crashes.")
         return not self.messages
 
     def _transform_params(self) -> None:
@@ -1095,7 +1097,7 @@ class PauseTreatment(Treatment):
             logger.error(f"Container state for {service} might be polluted now")
 
 
-class NetworkDelayTreatment(Treatment):
+class KubernetesNetworkDelayTreatment(Treatment):
     """Inject network delay into a service"""
 
     def __init__(self, *args, **kwargs):
@@ -1414,6 +1416,193 @@ class PacketLossTreatment(Treatment):
                 f"Cannot clean packet loss treatment from container {service}: {e.explanation}"
             )
             logger.error(f"Container state for {service} might be polluted now")
+
+
+
+class KubernetesNetworkPacketLossTreatment(Treatment):
+    """
+    Inject network errors into a service to induce packet loss
+    
+    To high values of loss_percentage can provoke a cascading effect and lead to nearly 100% packet loss
+    To low values of loss_percentage can lead to no effect at all or a small increas in latency
+    """
+
+    def __init__(self, *args, **kwargs):
+        super().__init__(*args, **kwargs)
+        #self.client = docker.from_env()
+        self.client = self.orchestrator
+
+    action = "kubernetes_loss"
+
+    def is_runtime(self) -> bool:
+        return True
+
+    def _validate_params(self) -> bool:
+        for key, val in self.params().items():
+            # required params
+            if (
+                    key in {"namespace", "label_selector", "label", "interface", "duration", "loss_percentage"}
+                    and key not in self.config
+            ):
+                self.messages.append(
+                    f"Parameter {key} has to be supplied for {self.treatment_type}"
+                )
+            # supplied params have correct type
+            if key in self.config and not isinstance(self.config[key], val):
+                self.messages.append(
+                    f"Parameter {key} has to be of type {val.__class__.__name__} for {self.treatment_type}"
+                )
+        for key, value in self.config.items():
+            if key in {"duration"}:
+                if not validate_time_string(value):
+                    self.messages.append(
+                        f"Value for parameter {key} has to match {time_string_format_regex} for {self.treatment_type}"
+                    )
+        return not self.messages
+
+    def _transform_params(self) -> None:
+        # correctly formatted params can be passed to tc directly as it can handle values + units
+        # we need only transform the duration into seconds for the time.sleep call
+        relative_time_string = self.config.get("duration")
+        relative_time_seconds = time_string_to_seconds(relative_time_string)
+        self.config["duration_seconds"] = relative_time_seconds
+
+    def params(self) -> dict:
+        return {
+            "interface": str,
+            "duration": str,
+            "loss_percentage": float,
+        }
+
+    def preconditions(self) -> bool:
+        super().preconditions()
+        """Check if the service has tc installed"""
+        #service = self.config.get("service_name")
+        namespace = self.config.get("namespace")
+        label_selector = self.config.get("label_selector")
+        label = self.config.get("label")
+        command = ["tc", "-Version"]
+        try:
+            assert namespace
+            assert label_selector
+            assert label
+            assert isinstance(self.orchestrator, KubernetesOrchestrator)
+            status_code, _ = self.orchestrator.execute_console_command_on_all_matching_pods(
+                namespace=namespace,
+                label_selector=label_selector,
+                label=label,
+                command=command
+            )
+            logger.info(f"Probed pods in {namespace} with {label_selector}={label} for tc with result {status_code}")
+            if status_code > 1 or status_code < 0:
+                install_command = ["apt", "update", "&&", "apt", "install", "iproute2", "-y"]
+                status_code_2, _ = self.orchestrator.execute_console_command_on_all_matching_pods(
+                    namespace=namespace,
+                    label_selector=label_selector,
+                    label=label,
+                    command=install_command
+                )
+                if status_code_2 > 1 or status_code_2 < 0:
+                    self.messages.append(
+                        f"Not all pods in {namespace} with {label_selector}={label} does not have tc installed which is required for {self.treatment_type}. Please install "
+                        "package iproute2 in the container"
+                    )
+                    return False
+                return False
+            return True
+        except OrchestratorResourceNotFoundException as e:
+            self.messages.append(e.message)
+            return False
+        except OrchestratorException as e:
+            self.messages.append(e.message)
+            return False
+        except Exception as e:
+            self.messages.append(str(e))
+            print(traceback.format_exc())
+            return False
+
+    def inject(self) -> None:
+        super().inject()
+        # required params
+        namespace = self.config.get("namespace")
+        label_selector = self.config.get("label_selector")
+        label = self.config.get("label")
+        interface = self.config.get("interface")
+        duration = self.config.get("duration_seconds")
+        loss_percentage = self.config.get("loss_percentage")
+        command = [
+            "tc",
+            "qdisc",
+            "add",
+            "dev",
+            interface,
+            "root",
+            "netem",
+            "loss",
+            "random",
+            str(loss_percentage),
+        ]
+        try:
+            assert namespace
+            assert label_selector
+            assert label
+            assert duration
+            assert isinstance(self.orchestrator, KubernetesOrchestrator)
+            status_code, _ = self.orchestrator.execute_console_command_on_all_matching_pods(
+                namespace=namespace,
+                label_selector=label_selector,
+                label=label,
+                command=command
+            )
+            if status_code > 1:
+                logger.error(
+                    f"Failed to inject packet loss into pods in {namespace} with {label_selector}={label}. Return code: {status_code}"
+                )
+                return
+            logger.info(
+                f"Injected packet loss into pods in {namespace} with {label_selector}={label}. Waiting for {duration}s."
+            )
+            time.sleep(duration)
+        except ContainerNotFound:
+            logger.error(f"Can't find container ")
+        except DockerAPIError as e:
+            logger.error(f"Docker API returned an error: {e.explanation}")
+
+    def clean(self) -> None:
+        super().clean()
+        interface = self.config.get("interface") or "eth0"
+        namespace = self.config.get("namespace")
+        label_selector = self.config.get("label_selector")
+        label = self.config.get("label")
+        command = ["tc", "qdisc", "del", "dev", interface, "root", "netem"]
+        try:
+            assert namespace
+            assert label_selector
+            assert label
+            assert isinstance(self.orchestrator, KubernetesOrchestrator)
+            status_code, _ = self.orchestrator.execute_console_command_on_all_matching_pods(
+                namespace=namespace,
+                label_selector=label_selector,
+                label=label,
+                command=command
+            )
+
+            if status_code > 1:
+                logger.error(f"Failed to clean packet loss from pods in {namespace} with {label_selector}={label}. Return code: {status_code}")
+                return
+            
+            logger.info(f"Cleaned packet loss treatment from pods in {namespace} with {label_selector}={label}")
+            #self.client.close()
+        except Exception as e:
+            logger.error(f"Cannot clean packet loss treatment from pods in {namespace} with {label_selector}={label}: {e}")
+            logger.error(f"State for pods in {namespace} with {label_selector}={label} might be polluted now")
+            
+    def _validate_orchestrator(self) -> bool:
+        if self.orchestrator.get_orchestrator_type() != "kubernetes":
+            self.messages.append(f"{self.name} treatment is only supported for Kubernetes orchestrators")
+            return False
+        return True
+    
 
 class DeploymentScaleTreatment(Treatment):
     """
