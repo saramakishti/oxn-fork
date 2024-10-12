@@ -307,6 +307,9 @@ class KubernetesApplySecurityContextTreatment(Treatment):
     An Article on Add Java Agents to Existing Kubernetes and Helm Applications Instantly
     https://www.cncf.io/blog/2021/03/24/add-java-agents-to-existing-kubernetes-and-helm-applications-instantly/
     here with better format: https://www.rookout.com/blog/add-java-agents-to-existing-kubernetes-and-helm-applications-instantly/
+
+
+    Regarding Maria, this treatment seems to be not working as expected and therefore has not to be used in the experiments for the first kubernetes experiments.
 """
 class ByteMonkeyTreatment(Treatment):
     """Compile-time treatment that injects faults into a java service"""

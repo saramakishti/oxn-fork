@@ -51,6 +51,9 @@ class LocustFileLoadgenerator:
        
         self.target = loadgen_section.get("target")
         
+        self.max_users = loadgen_section.get("max_users", 100)
+        self.spawn_rate = loadgen_section.get("spawn_rate", 10)
+        
         self.base_address = "localhost"
         self.port = 8080
         
@@ -94,7 +97,7 @@ class LocustFileLoadgenerator:
         assert self.env is not None, "Locust environment must be initialized before starting"
         assert self.env.runner is not None, "Locust runner must be initialized before starting"
         
-        self.env.runner.start(500, 50.0)
+        self.env.runner.start(self.max_users, self.spawn_rate)
         self.greenlets.spawn(stats_printer(self.env.stats))
         self.greenlets.spawn(stats_history, self.env.runner)
 

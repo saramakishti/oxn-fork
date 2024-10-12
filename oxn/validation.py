@@ -228,23 +228,8 @@ syntactic_schema = schema.Schema(
             },
             "loadgen": {
                 "run_time": str,
-                schema.Optional("sequential"): bool,
-                schema.Optional("stages"): [
-                    {
-                        "duration": int,
-                        "users": int,
-                        "spawn_rate": int,
-                    }
-                ],
-                schema.Optional("tasks"): [
-                    {
-                        schema.Optional("name"): str,
-                        "endpoint": str,
-                        "verb": str,
-                        schema.Optional("weight"): int,
-                        schema.Optional("params"): dict,
-                    }
-                ],
+                schema.Optional("max_users"): int,
+                schema.Optional("spawn_rate"): int,
                 schema.Optional("locust_files"): list[str],
                 schema.Optional("target"): {
                     "name": str,
