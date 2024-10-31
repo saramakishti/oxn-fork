@@ -87,6 +87,9 @@ class EmptyTreatment(Treatment):
 
     def is_runtime(self):
         return True
+    
+    def _validate_orchestrator(self) -> bool:
+        return True
 
 
 class EmptyKubernetesTreatment(Treatment):

@@ -14,78 +14,85 @@ experiment:
     - frontend_traces:
         type: trace
         service_name: frontend 
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         limit: 10000
     - recommendation_traces:
         type: trace
         service_name: recommendationservice 
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         limit: 10000
     - system_CPU:
         type: metric
         metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation"}[1m]))
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         step: 1
         target: oxn
     - recommendation_deployment_CPU:
         type: metric
         metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation", pod=~"astronomy-shop-recommendationservice.*"}[90s])) by (pod)
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         step: 1
         target: oxn
     - recommendationservice_kepler_package_joules:
         type: metric
         metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_package_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[1m]))
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         step: 1
         target: oxn
     - recommendationservice_kepler_dram_joules:
         type: metric
         metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_dram_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[1m]))
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         step: 1
         target: oxn
     - recommendationservice_kepler_other_joules:
         type: metric
         metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_other_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[1m]))
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         step: 1
         target: oxn
     - latency_frontend_95_percentile:
         type: metric
         metric_name: histogram_quantile(0.95, sum(rate(duration_milliseconds_bucket{service_name="frontend"}[90s])) by (le))
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         step: 1
         target: sue
     - latency_recommendationservice_95_percentile:
         type: metric
         metric_name: histogram_quantile(0.95, sum(rate(duration_milliseconds_bucket{service_name="recommendationservice"}[90s])) by (le))
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         step: 1
         target: sue
     - recommendations_total:
         type: metric
         metric_name: increase(app_recommendations_counter_total[1m])
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         step: 1
         target: sue
     - sampling_rates:
         type: metric
         metric_name: increase(otelcol_processor_probabilistic_sampler_count_traces_sampled[1m])
-        left_window: 30s
-        right_window: 30s
+        left_window: 300s
+        right_window: 300s
         step: 1
         target: sue
+    - kepler_metric_all_namespace:
+        type: metric
+        metric_name: sum by (pod_name, container_name, container_namespace, node)(irate(kepler_container_joules_total{container_namespace="system-under-evaluation"}[1m]))
+        left_window: 300s
+        right_window: 300s
+        step: 1
+        target: oxn
   treatments:
     #- kill_recommendation_service:
     #    action: kubernetes_kill
@@ -129,23 +136,21 @@ experiment:
     #       sampling_percentage: 5.0,
     #       hash_seed: 22,
     #       }
-    - package_lost_treatment:
-        action: kubernetes_loss
+    #- package_lost_treatment:
+    #    action: kubernetes_loss
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/name,
+    #      label: astronomy-shop-recommendationservice,
+    #      loss_percentage: 15.0,
+    #      duration: 10m,
+    #      interface: eth0,
+    #    }
+    - empty_treatment:
+        action: empty
         params: {
-          namespace: system-under-evaluation,
-          label_selector: app.kubernetes.io/name,
-          label: astronomy-shop-recommendationservice,
-          loss_percentage: 15.0,
-          duration: 2m,
-          interface: eth0,
+          duration: 20m,
         }
-    # - interval:
-    #     action: otel_metrics_interval
-    #     params: {
-    #       compose_file: opentelemetry-demo/docker-compose.yml,
-    #       service_name: recommendationservice,
-    #       interval: 1s
-    #     }
     #- increase_otel_metric_interval:
     #    action: kubernetes_otel_metrics_interval
     #    params: {
@@ -168,17 +173,9 @@ experiment:
     required: [{namespace: system-under-evaluation, name: astronomy-shop-prometheus-server}] # {namespace: monitoring, name: not-running-service}
     #required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}]
   loadgen:
-    run_time: 5m
-    #stages: 
-    #- {duration: 20, users: 10, spawn_rate: 5}
-    #- {duration: 600, users: 50, spawn_rate: 10}
-    #tasks:
-    #- { endpoint: /, verb: get, weight: 1, params: { } }
-    #- { endpoint: /api/products/0PUK6V6EV0, verb: get, weight: 10, params: { } }
-    #- { endpoint: /api/recommendations, verb: get, weight: 3, params: { "productIds": ["1YMWWN1N4O"]}}
-    #- { endpoint: /api/cart, verb: get, weight: 3, params: { } }
-    #- { endpoint: /api/data, verb: get, weight: 3, params: { "contextKeys": [ "accessories" ] } }
-    #- { endpoint: /api/cart, verb: post, weight: 2, params: { "item": {"productId":"6E92ZMYYFZ", "quantity":2, }, "userId":'ab2d0fc0-7224-11ec-8ef2-b658b885fb3',} }
+    run_time: 30m
+    max_users: 500
+    spawn_rate: 10
     locust_files: [
       { path: locust/locust_basic_interaction.py },
       { path: locust/locust_otel_demo.py },

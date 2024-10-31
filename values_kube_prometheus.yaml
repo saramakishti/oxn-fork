@@ -1,2 +1,9 @@
 grafana:
   adminPassword: admin
+kube-state-metrics:
+  metricLabelsAllowlist:
+    - namespaces=[*]
+    - pods=[*]
+  metricAnnotationsAllowList:
+    - pods=[*]
+    - namespaces=[*]

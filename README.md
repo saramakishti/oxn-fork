@@ -94,16 +94,64 @@ oxn experiments/recommendation_pause_baseline.yml --report baseline_report.yml
 ```
 
 ### Running in kubernetes
-Install the [Helm Chart](https://opentelemetry.io/docs/demo/kubernetes-deployment/):
+#### Cluster Requirements
+The cluster provides Persistent Volume Claims (PVCs) to store data over multiple pod restarts. For this, the cluster makes use of OpenEBS in the default given config of OXN. Install OpenEBS with the following command:
+
+```bash
+kubectl apply -f https://openebs.github.io/charts/openebs-operator.yaml
 ```
+
+> You can also use other implementations of PVCs. Just make sure to change the values in the helm configs accordingly.
+
+#### External Observability Stack
+For the Prometheus and Grafana, we use the [kube-prometheus-stack](https://github.com/prometheus-community/helm-charts/tree/main/charts/kube-prometheus-stack) which deploys and configures Prometheus and Grafana in a ready to use state.
+
+The following commands add the helm repository and install the kube-prometheus-stack in a specific namespace and apply custom configurations:
+```bash
+helm repo add prometheus-community https://prometheus-community.github.io/helm-charts
+helm repo update
+helm install kube-prometheus prometheus-community/kube-prometheus-stack 
+    --namespace oxn-external-monitoring 
+    --create-namespace 
+    --version 62.5.1 
+    -f values_kube_prometheus.yaml
+```
+
+Kepler also provides a Helm chart. Therefore, the provision is straightforward. We [follow the instructions from the official documentation](https://sustainable-computing.io/installation/kepler-helm/) and execute the following commands. The Command deploys Kepler in the correct namespace and applies custom changes.
+
+```bash
+helm repo add kepler https://sustainable-computing-io.github.io/kepler-helm-chart
+helm repo update
+
+helm install kepler kepler/kepler \
+    --namespace oxn-external-monitoring \
+    --create-namespace \
+    --set serviceMonitor.enabled=true \
+    --set serviceMonitor.labels.release=kube-prometheus \
+    -f values_kepler.yaml 
+```
+
+There is a preconfigured dashboard for Grafana. The dashboard is deployed from the OXN repository using the command:
+```bash
+GF_POD=$(
+    kubectl get pod \
+        -n oxn-external-monitoring \
+        -l app.kubernetes.io/name=grafana \
+        -o jsonpath="{.items[0].metadata.name}"
+)
+kubectl cp kepler_dashboard.json oxn-external-monitoring/$GF_POD:/tmp/dashboards/kepler_dashboard.json
+```
+
+
+#### System Under Experiment Setup
+Deployment of the SUE follows also the instructions from the [official documentation](https://opentelemetry.io/docs/demo/kubernetes-deployment/) Deploy the SUE in an own namespace and apply a custom configuration file:
+
+```bash
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
-
-helm install astronomy-shop open-telemetry/opentelemetry-demo
+helm repo update
+helm install astronomy-shop open-telemetry/opentelemetry-demo 
+    --namespace system-under-evaluation 
+    --create-namespace
+    -f values_opentelemetry_demo.yaml 
 ```
 
-Apply custom changes needed for OXN to run
-```
-helm upgrade astronomy-shop open-telemetry/opentelemetry-demo -f values.yaml
-kubectl annotate svc/kubelet -n kube-system --overwrite prometheus.io/scrape=true prometheus.io/port=10250 opentelemetry_community_demo=true prometheus.io/scheme=https
-kubectl annotate endpoints/kubelet -n kube-system --overwrite prometheus.io/scrape=true prometheus.io/port=10250 opentelemetry_community_demo=true prometheus.io/scheme=https
-```
