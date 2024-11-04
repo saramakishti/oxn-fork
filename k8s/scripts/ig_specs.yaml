@@ -1,0 +1,39 @@
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: "2024-11-04T16:55:23Z"
+  labels:
+    kops.k8s.io/cluster: oxn.dev.com
+  name: control-plane-europe-west1-b
+spec:
+  gcpProvisioningModel: SPOT
+  image: ubuntu-os-cloud/ubuntu-2204-jammy-v20240607
+  machineType: e2-standard-2
+  maxSize: 1
+  minSize: 1
+  role: Master
+  subnets:
+  - europe-west1
+  zones:
+  - europe-west1-b
+
+---
+
+apiVersion: kops.k8s.io/v1alpha2
+kind: InstanceGroup
+metadata:
+  creationTimestamp: "2024-11-04T16:55:25Z"
+  labels:
+    kops.k8s.io/cluster: oxn.dev.com
+  name: nodes-europe-west1-b
+spec:
+  gcpProvisioningModel: SPOT
+  image: ubuntu-os-cloud/ubuntu-2204-jammy-v20240607
+  machineType: e2-standard-2
+  maxSize: 3
+  minSize: 3
+  role: Node
+  subnets:
+  - europe-west1
+  zones:
+  - europe-west1-b
