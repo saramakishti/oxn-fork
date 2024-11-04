@@ -24,3 +24,12 @@ evaluation.py
 *.h5
 *.pickle
 kubevpn.exe
+
+# terraform
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+.terraform
+
+# logs
+*.log
