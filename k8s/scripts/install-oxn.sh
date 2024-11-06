@@ -17,6 +17,7 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 MANIFESTS_DIR="${SCRIPT_DIR}/../manifests"
 DASHBOARDS_DIR="${SCRIPT_DIR}/../dashboards"
+CLUSTER_NAME="oxn.dev.com" 
 
 # Verify directories exist
 if [ ! -d "$MANIFESTS_DIR" ]; then
@@ -73,6 +74,48 @@ helm install astronomy-shop open-telemetry/opentelemetry-demo \
     --create-namespace \
     -f "${MANIFESTS_DIR}/values_opentelemetry_demo.yaml"
 
-echo "Installation complete!"
+echo "Copying kubeconfig and OXN source to control plane node..."
+CONTROL_PLANE_NODE=$(kubectl get nodes --selector=node-role.kubernetes.io/control-plane -o jsonpath='{.items[0].metadata.name}')
+OXN_SOURCE_DIR="${SCRIPT_DIR}/../.."
 
+# Create directories on control plane node and set permissions
+gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
+    sudo mkdir -p /opt/oxn ~/.kube
+    sudo mkdir -p /tmp/oxn-source
+    sudo chown -R $(whoami):$(whoami) /tmp/oxn-source
+    sudo chmod -R 755 /tmp/oxn-source
+'
+
+# Copy kubeconfig
+gcloud compute scp "${CLUSTER_NAME}.config" "${CONTROL_PLANE_NODE}:/tmp/kubeconfig"
+gcloud compute ssh "${CONTROL_PLANE_NODE}" --command="sudo mv /tmp/kubeconfig ~/.kube/config"
+
+# Copy OXN source files
+gcloud compute scp --recurse "${OXN_SOURCE_DIR}"/* "${CONTROL_PLANE_NODE}:/tmp/oxn-source/"
+gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
+    sudo mv /tmp/oxn-source/* /opt/oxn/
+    sudo rm -r /tmp/oxn-source
+    sudo chown -R $(whoami):$(whoami) /opt/oxn
+'
+echo "installing OXN..."
+
+# Install Python and pip
+gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
+    sudo apt-get update
+    sudo apt-get install -y python3 python3-pip
+'
+
+# Install OXN
+gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
+    cd /opt/oxn
+    pip install  .
+    
+    # Verify installation
+    oxn --help
+'
+
+
+echo "Installation complete!"
+echo "To run an experiment: ./run-experiment.sh <experiment-yaml-file> [additional oxn arguments]"
+echo "To extract results: ./extract-results.sh <remote-results-path> <local-destination-dir>"
     

@@ -13,3 +13,5 @@ kops delete cluster --name "${CLUSTER_NAME}" --yes
 # Terraform destroy to remove GCS bucket
 terraform destroy -auto-approve
 
+# Remove kubeconfig file
+rm -f "${CLUSTER_NAME}.config"

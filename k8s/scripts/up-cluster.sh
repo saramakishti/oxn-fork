@@ -14,7 +14,7 @@ fi
 terraform apply -auto-approve
 
 # Configuration variables
-CLUSTER_NAME="oxn.dev.com"          # If you want to change the cluster name, you need to update the  variable in down-cluster.sh
+CLUSTER_NAME="oxn.dev.com"          # If you want to change the cluster name, you need to update the  variable in down-cluster.sh and install-oxn.sh
 PROJECT_ID=$1                       # GCP project ID
 ZONE="europe-west1-b"               # Single zone since HA is not needed
 NODE_COUNT=3
@@ -58,8 +58,8 @@ echo "Creating the cluster..."
 kops update cluster --name="${CLUSTER_NAME}" --yes
 
 # Update local kubeconfig
+kops export kubeconfig --admin --kubeconfig="${CLUSTER_NAME}.config"
 kops export kubeconfig --admin
-
 # Wait for the cluster to be ready
 echo "Waiting for cluster to be ready..."
 kops validate cluster --wait 10m
