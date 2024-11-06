@@ -25,7 +25,7 @@ gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
     sudo chown -R $(whoami):$(whoami) /opt/oxn
     
     cd /opt/oxn
-    pip install -e .
+    pip install  .
 
     # Verify installation
     oxn --help
