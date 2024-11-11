@@ -24,3 +24,4 @@ evaluation.py
 *.h5
 *.pickle
 kubevpn.exe
+venv
