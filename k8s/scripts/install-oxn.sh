@@ -93,6 +93,7 @@ gcloud compute ssh "${CONTROL_PLANE_NODE}" --command="sudo mv /tmp/kubeconfig ~/
 # Copy OXN source files
 gcloud compute scp --recurse "${OXN_SOURCE_DIR}"/* "${CONTROL_PLANE_NODE}:/tmp/oxn-source/"
 gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
+    sudo apt install -y unzip
     sudo mv /tmp/oxn-source/* /opt/oxn/
     sudo rm -r /tmp/oxn-source
     sudo chown -R $(whoami):$(whoami) /opt/oxn
@@ -108,9 +109,12 @@ gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
 # Install OXN
 gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
     cd /opt/oxn
-    pip install  .
+    # not the best solution
+    sudo pip3 install .
     
-    # Verify installation
+    # verify installation
+    export PATH="$PATH:$HOME/.local/bin:/usr/local/bin"
+    which oxn
     oxn --help
 '
 

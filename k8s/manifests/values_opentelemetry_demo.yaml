@@ -5,11 +5,11 @@ jaeger:
         memory: 5Gi
       limits:
         memory: 5Gi
-    # args:
-    #   - --query.base-path=/jaeger/ui
-    #   - --prometheus.server-url=http://{{ include "otel-demo.name" . }}-prometheus-server:9090
-    #   - --prometheus.query.normalize-calls=true
-    #   - --prometheus.query.normalize-duration=true
+    args:
+      - --query.base-path=/jaeger/ui
+      - --prometheus.server-url=http://{{ include "otel-demo.name" . }}-prometheus-server:9090
+      - --prometheus.query.normalize-calls=true
+      - --prometheus.query.normalize-duration=true
   # storage:
   #   badger:
   #     ephemeral: false

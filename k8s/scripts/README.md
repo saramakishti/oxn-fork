@@ -72,3 +72,34 @@ These scripts manage a Kubernetes cluster and install the OpenTelemetry Demo.
    ./uninstall-oxn.sh
    ./down-cluster.sh
    ```
+
+# Development
+Here are some useful commands for development.
+
+### Accessing graphana:
+```bash
+kubectl port-forward -n oxn-external-monitoring svc/kube-prometheus-grafana 3000:80
+```
+then visit http://localhost:3000/
+user : admin
+password : admin
+
+### Accessing Prometheus (oxn external monitoring)
+```bash
+kubectl port-forward -n oxn-external-monitoring svc/kube-prometheus-kube-prome-prometheus 9091:9090
+```
+then visit http://localhost:9091/
+
+### Accessing the OpenTelemetry Demo:
+```bash
+kubectl port-forward -n system-under-evaluation svc/astronomy-shop-frontendproxy 8080:8080
+```
+then visit http://localhost:8080/
+
+Jaeger: http://localhost:8080/jaeger/ui/
+
+### Accessing the Prometheus Server inside the SUE:
+```bash
+kubectl port-forward -n system-under-evaluation svc/astronomy-shop-prometheus-server 9090:9090
+```
+then visit http://localhost:9090/

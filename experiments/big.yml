@@ -1,3 +1,4 @@
+# inject a packet delay of 0-90ms while increasing the otel metric inverval to 1s
 experiment:
   version: 0.0.1
   orchestrator: kubernetes
@@ -93,23 +94,92 @@ experiment:
         step: 1
         target: oxn
   treatments:
-    - empty_treatment:
-        action: empty
+    - kill_recommendation_service:
+        action: kubernetes_kill
         params: {
-          duration: 1m,
+          namespace: system-under-evaluation,
+          label_selector: app.kubernetes.io/component,
+          label: recommendationservice,
+          amount_to_kill: 1,
         }
+    #- stop_loadgen_deployment:
+    #    action: scale_deployment
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/component,
+    #      label: loadgenerator,
+    #      scale_to: 0,
+    #    }
+    #- add_security_context:
+    #    action: security_context_kubernetes
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/component,
+    #      label: recommendationservice,
+    #      capabilities: { add: ["NET_ADMIN"] },
+    #    }
+    # - delay_treatment:
+    #     action: delay
+    #     params: {
+    #       namespace: system-under-evaluation,
+    #       label_selector: app.kubernetes.io/name,
+    #       label: astronomy-shop-recommendationservice,
+    #       #service_name: node-exporter,
+    #       delay_time: 45ms,
+    #       delay_jitter: 45ms,
+    #       duration: 2m,
+    #       interface: eth0,
+    #     }
+    # - probabilistic_head_sampling_rate:
+    #     action: kube_probl
+    #     params: {
+    #       sampling_percentage: 5.0,
+    #       hash_seed: 22,
+    #       }
+    #- package_lost_treatment:
+    #    action: kubernetes_loss
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/name,
+    #      label: astronomy-shop-recommendationservice,
+    #      loss_percentage: 15.0,
+    #      duration: 10m,
+    #      interface: eth0,
+    #    }
+    #- empty_treatment:
+    #    action: empty
+    #    params: {
+    #      duration: 5m,
+    #    }
+    #- increase_otel_metric_interval:
+    #    action: kubernetes_otel_metrics_interval
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/component,
+    #      label: recommendationservice,
+    #      interval: 15s,
+    #    }
+     #reloading the prometheus config is not as trivial as it seems to be
+    #- prometheus_scrape_interval:
+    #    action: kubernetes_prometheus_interval
+    #    params: {
+    #      interval: 5s,
+    #      evaluation_interval: 5s,
+    #      scrape_timeout: 3s,
+    #    }
   sue:
     compose: opentelemetry-demo/docker-compose.yml
     exclude: [loadgenerator]
-    required: [{namespace: system-under-evaluation, name: astronomy-shop-prometheus-server}]
+    required: [{namespace: system-under-evaluation, name: astronomy-shop-prometheus-server}] # {namespace: monitoring, name: not-running-service}
+    #required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}]
   loadgen:
-    run_time: 2m
-    max_users: 10
-    spawn_rate: 5
+    run_time: 10m
+    max_users: 500
+    spawn_rate: 100
     locust_files: [
       { path: /opt/oxn/locust/locust_basic_interaction.py },
       { path: /opt/oxn/locust/locust_otel_demo.py },
-    ]
+      ]
     target:
       name: astronomy-shop-frontendproxy
       namespace: system-under-evaluation

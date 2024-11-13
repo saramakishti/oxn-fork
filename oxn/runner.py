@@ -16,7 +16,7 @@ import psutil
 
 import docker
 
-from .errors import OxnException
+from .errors import OxnException, PrometheusException, JaegerException
 from .treatments import (
     DeploymentScaleTreatment,
     EmptyDockerComposeTreatment,
@@ -259,9 +259,16 @@ class ExperimentRunner:
         """Label the observed data with information from the treatments"""
         for treatment in self.treatments.values():
             for response_id, response_variable in self.observer.variables().items():
-                response_variable.label(
-                    treatment_end=treatment.end,
-                    treatment_start=treatment.start,
-                    label_column=treatment.name,
-                    label=treatment.name,
-                )
+                try:
+                    response_variable.label(
+                        treatment_end=treatment.end,
+                        treatment_start=treatment.start,
+                        label_column=treatment.name,
+                        label=treatment.name,
+                    )
+                except (JaegerException, PrometheusException) as e:
+                    logger.warning(f"Failed to label response variable {response_variable.name}: {str(e)}. Skipping.")
+                    continue
+                except Exception as e:
+                    logger.error(f"Unexpected error while labeling response variable {response_variable.name}: {str(e)}")
+                    raise
