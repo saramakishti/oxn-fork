@@ -46,12 +46,9 @@ kops get ig --name "${CLUSTER_NAME}" -o yaml > ig_specs.yaml
 
 # Modify the instance group specs to use spot instances
 # This adds the gcpProvisioningModel: SPOT to both node and control-plane specs
-sed -i '/spec:/a\  gcpProvisioningModel: SPOT' ig_specs.yaml
-
-
-# Apply the instance group specs
-echo "Applying instance group configurations..."
-kops replace -f ig_specs.yaml
+# Uncomment this if you want to use spot instances
+# sed -i '/spec:/a\  gcpProvisioningModel: SPOT' ig_specs.yaml
+# kops replace -f ig_specs.yaml
 
 # Create the cluster
 echo "Creating the cluster..."

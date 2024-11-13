@@ -1,0 +1,53 @@
+experiment:
+  version: 0.0.1
+  orchestrator: kubernetes
+  services:
+    jaeger: 
+      name: astronomy-shop-jaeger-query
+      namespace: system-under-evaluation
+    prometheus: [
+      { name: astronomy-shop-prometheus-server, namespace: system-under-evaluation, target: sue },
+      { name: kube-prometheus-kube-prome-prometheus, namespace: oxn-external-monitoring, target: oxn },
+    ]
+  responses:
+    - frontend_traces:
+        type: trace
+        service_name: frontend 
+        left_window: 60s
+        right_window: 60s
+        limit: 10000
+    - shippingservice_traces:
+        type: trace
+        service_name: shippingservice 
+        left_window: 60s
+        right_window: 60s
+        limit: 10000
+    - system_CPU:
+        type: metric
+        metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation"}[1m]))
+        left_window: 60s
+        right_window: 60s
+        step: 1
+        target: oxn
+  treatments:
+    - empty_treatment:
+        action: empty
+        params: {
+          duration: 1m,
+        }
+  sue:
+    compose: opentelemetry-demo/docker-compose.yml
+    exclude: [loadgenerator]
+    required: [{namespace: system-under-evaluation, name: astronomy-shop-prometheus-server}]
+  loadgen:
+    run_time: 2m
+    max_users: 10
+    spawn_rate: 5
+    locust_files: [
+      { path: /opt/oxn/locust/locust_basic_interaction.py },
+      { path: /opt/oxn/locust/locust_otel_demo.py },
+    ]
+    target:
+      name: astronomy-shop-frontendproxy
+      namespace: system-under-evaluation
+      port: 8080
