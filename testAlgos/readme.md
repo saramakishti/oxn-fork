@@ -1,6 +1,3 @@
-# For testing Fault detection Algorithms locally
-
-
-# Algorithms
+# Machine Learning Algorithms
 
 Algorithms are Kafka Consumers typically
