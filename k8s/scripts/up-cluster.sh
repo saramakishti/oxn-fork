@@ -17,7 +17,7 @@ terraform apply -auto-approve
 CLUSTER_NAME="oxn.dev.com"          # If you want to change the cluster name, you need to update the  variable in down-cluster.sh and install-oxn.sh
 PROJECT_ID=$1                       # GCP project ID
 ZONE="europe-west1-b"               # Single zone since HA is not needed
-NODE_COUNT=3
+NODE_COUNT=1
 CONTROL_PLANE_SIZE="e2-standard-2"  
 NODE_SIZE="e2-standard-2"           
 

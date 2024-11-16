@@ -29,6 +29,13 @@ experiment:
         right_window: 60s
         step: 1
         target: oxn
+    - latency_recommendationservice_95_percentile:
+        type: metric
+        metric_name: histogram_quantile(0.95, sum(rate(duration_milliseconds_bucket{service_name="recommendationservice"}[90s])) by (le))
+        left_window: 300s
+        right_window: 300s
+        step: 1
+        target: sue
   treatments:
     - empty_treatment:
         action: empty

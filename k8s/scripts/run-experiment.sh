@@ -14,6 +14,5 @@ CONTROL_PLANE_NODE=$(kubectl get nodes --selector=node-role.kubernetes.io/contro
 REMOTE_PATH="/tmp/$(basename ${EXPERIMENT_FILE})"
 gcloud compute scp "${EXPERIMENT_FILE}" "${CONTROL_PLANE_NODE}:${REMOTE_PATH}"
 
-
-
-gcloud compute ssh "${CONTROL_PLANE_NODE}" --command="oxn ${REMOTE_PATH} $*"
+# Run experiment with virtualenv activated
+gcloud compute ssh "${CONTROL_PLANE_NODE}" --command="cd /opt/oxn && source venv/bin/activate && oxn ${REMOTE_PATH} $*"

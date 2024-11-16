@@ -16,7 +16,6 @@ echo "Copying and extracting source code..."
 gcloud compute scp /tmp/oxn-source.zip "${CONTROL_PLANE_NODE}:/tmp/"
 
 gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
-    sudo pip3 uninstall -y oxn
     # Clean and prepare directories
     sudo rm -rf /tmp/oxn-source /opt/oxn/*
     sudo mkdir -p /tmp/oxn-source
@@ -32,13 +31,20 @@ gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
     sudo rm -r /tmp/oxn-source
     sudo chown -R $(whoami):$(whoami) /opt/oxn
     
+    # Create new virtualenv
     cd /opt/oxn
-    # not the best solution
-    sudo pip3 install .
+    virtualenv venv
     
-    # verify installation
-    export PATH="$PATH:$HOME/.local/bin:/usr/local/bin"
+    # Install OXN in virtualenv
+    source venv/bin/activate
+    pip install .
+    
+    # Verify installation
+    which oxn
     oxn --help
+    
+    # Deactivate virtualenv
+    deactivate
 '
 
 # Cleanup local temp file

@@ -63,7 +63,7 @@ GF_POD=$(kubectl get pod \
     -n oxn-external-monitoring \
     -l app.kubernetes.io/name=grafana \
     -o jsonpath="{.items[0].metadata.name}")
-kubectl cp "${DASHBOARDS_DIR}/kepler_dashboard.json" \
+kubectl cp "${DASHBOARDS_DIR}/kepler_dashboard.json" \  
     "oxn-external-monitoring/${GF_POD}:/tmp/dashboards/kepler_dashboard.json"
 
 echo "Installing OpenTelemetry Demo..."
@@ -81,9 +81,6 @@ OXN_SOURCE_DIR="${SCRIPT_DIR}/../.."
 # Create directories on control plane node and set permissions
 gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
     sudo mkdir -p /opt/oxn ~/.kube
-    sudo mkdir -p /tmp/oxn-source
-    sudo chown -R $(whoami):$(whoami) /tmp/oxn-source
-    sudo chmod -R 755 /tmp/oxn-source
 '
 
 # Copy kubeconfig
@@ -91,33 +88,40 @@ gcloud compute scp "${CLUSTER_NAME}.config" "${CONTROL_PLANE_NODE}:/tmp/kubeconf
 gcloud compute ssh "${CONTROL_PLANE_NODE}" --command="sudo mv /tmp/kubeconfig ~/.kube/config"
 
 # Copy OXN source files
-gcloud compute scp --recurse "${OXN_SOURCE_DIR}"/* "${CONTROL_PLANE_NODE}:/tmp/oxn-source/"
-gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
-    sudo apt install -y unzip
-    sudo mv /tmp/oxn-source/* /opt/oxn/
-    sudo rm -r /tmp/oxn-source
-    sudo chown -R $(whoami):$(whoami) /opt/oxn
-'
-echo "installing OXN..."
+echo "Creating zip archive of source code..."
+(cd "${OXN_SOURCE_DIR}" && zip -r /tmp/oxn-source.zip ./*)
+gcloud compute scp /tmp/oxn-source.zip "${CONTROL_PLANE_NODE}:/tmp/"
 
-# Install Python and pip
+# Install Python and OXN
 gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
+    # Install Python and requirements
     sudo apt-get update
-    sudo apt-get install -y python3 python3-pip
-'
+    sudo apt-get install -y python3 python3-pip unzip
 
-# Install OXN
-gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
+    # Setup directories
+    sudo chown -R $(whoami):$(whoami) /opt/oxn
+
+    # Install virtualenv globally to avoid PATH issues
+    sudo pip3 install virtualenv
+
+    # Create virtualenv
     cd /opt/oxn
-    # not the best solution
-    sudo pip3 install .
+    python3 -m virtualenv venv
     
-    # verify installation
-    export PATH="$PATH:$HOME/.local/bin:/usr/local/bin"
+    # Extract OXN source
+    unzip -q /tmp/oxn-source.zip
+    rm /tmp/oxn-source.zip
+    
+    # Install OXN in virtualenv
+    source venv/bin/activate
+    pip3 install .
+    
+    # Verify installation
     which oxn
     oxn --help
 '
 
+rm -f /tmp/oxn-source.zip
 
 echo "Installation complete!"
 echo "To run an experiment: ./run-experiment.sh <experiment-yaml-file> [additional oxn arguments]"

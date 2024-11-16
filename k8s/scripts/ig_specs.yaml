@@ -1,7 +1,7 @@
 apiVersion: kops.k8s.io/v1alpha2
 kind: InstanceGroup
 metadata:
-  creationTimestamp: "2024-11-13T15:47:36Z"
+  creationTimestamp: "2024-11-16T13:13:55Z"
   labels:
     kops.k8s.io/cluster: oxn.dev.com
   name: control-plane-europe-west1-b
@@ -21,15 +21,15 @@ spec:
 apiVersion: kops.k8s.io/v1alpha2
 kind: InstanceGroup
 metadata:
-  creationTimestamp: "2024-11-13T15:47:37Z"
+  creationTimestamp: "2024-11-16T13:13:56Z"
   labels:
     kops.k8s.io/cluster: oxn.dev.com
   name: nodes-europe-west1-b
 spec:
   image: ubuntu-os-cloud/ubuntu-2204-jammy-v20240607
   machineType: e2-standard-2
-  maxSize: 3
-  minSize: 3
+  maxSize: 1
+  minSize: 1
   role: Node
   subnets:
   - europe-west1
