@@ -1,7 +1,7 @@
 apiVersion: kops.k8s.io/v1alpha2
 kind: InstanceGroup
 metadata:
-  creationTimestamp: "2024-11-16T13:13:55Z"
+  creationTimestamp: "2024-11-17T13:23:40Z"
   labels:
     kops.k8s.io/cluster: oxn.dev.com
   name: control-plane-europe-west1-b
@@ -21,7 +21,7 @@ spec:
 apiVersion: kops.k8s.io/v1alpha2
 kind: InstanceGroup
 metadata:
-  creationTimestamp: "2024-11-16T13:13:56Z"
+  creationTimestamp: "2024-11-17T13:23:41Z"
   labels:
     kops.k8s.io/cluster: oxn.dev.com
   name: nodes-europe-west1-b

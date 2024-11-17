@@ -20,37 +20,96 @@ logger = logging.getLogger(__name__)
 JAEGER_BASE_URL = "http://localhost:8080/jaeger/ui/api"
 PROMETHEUS_BASE_URL = "http://localhost:9090/api/v1"
 CHECK_INTERVAL = 10  # seconds
-RUNTIME_DURATION = timedelta(minutes=5)  # How long to run the script for (None for infinite)
+RUNTIME_DURATION = timedelta(minutes=1)  # How long to run the script for (None for infinite)
 LOOKBACK_WINDOW = {
     'prometheus': timedelta(minutes=5),  # How far back to look for Prometheus metrics
     'jaeger': timedelta(hours=1)        # How far back to look for Jaeger traces
 }
 
 ########################### PROMETHEUS ###########################
-# 95th percentile latency for HTTP client requests (outgoing)
-#histogram_quantile(0.95, sum(rate(http_client_duration_milliseconds_bucket{job=~"opentelemetry-demo/.*"}[1m])) by (job, le))
-
-# 95th percentile latency for specific service (frontend)
-#histogram_quantile(0.95, sum(rate(http_client_duration_milliseconds_bucket{job="opentelemetry-demo/frontend"}[1m])) by (le))
-
-# Break down by endpoint
-#histogram_quantile(0.95, sum(rate(http_client_duration_milliseconds_bucket{job="opentelemetry-demo/recommendationservice"}[1m])) by (net_peer_name, le))
+# Define metrics to monitor
 PROMETHEUS_METRICS = [
+    # Pod Health Metrics
     {
-        'name': 'Frontend Latency (p95)',
-        'query': 'histogram_quantile(0.95, sum(rate(http_client_duration_milliseconds_bucket{job="opentelemetry-demo/frontend"}[1m])) by (le))'
+        'name': 'Pod Status Phases',
+        'query': 'sum by (phase) (kube_pod_status_phase{namespace="system-under-evaluation"})'
     },
     {
-        'name': 'Recommendation Latency (p95)',
-        'query': 'histogram_quantile(0.95, sum(rate(http_client_duration_milliseconds_bucket{job="opentelemetry-demo/recommendationservice"}[1m])) by (net_peer_name, le))s'
+        'name': 'Pod Restarts',
+        'query': 'sum(kube_pod_container_status_restarts_total{namespace="system-under-evaluation"})'
     },
     {
-        'name': 'Recommendations Total',
-        'query': 'increase(app_recommendations_counter_total[1m])'
+        'name': 'Terminated Pods',
+        'query': 'sum(kube_pod_container_status_terminated{namespace="system-under-evaluation"})'
+    },
+
+    # Network Performance Metrics
+    {
+        'name': 'Failed Spans',
+        'query': 'sum(rate(otelcol_exporter_send_failed_spans[1m]))'
     },
     {
-        'name': 'Sampling Rates',
-        'query': 'increase(otelcol_processor_probabilistic_sampler_count_traces_sampled[1m])'
+        'name': 'Network Receive Bytes',
+        'query': 'sum(rate(node_network_receive_bytes_total[1m])) by (instance)'
+    },
+    {
+        'name': 'Network Transmit Bytes',
+        'query': 'sum(rate(node_network_transmit_bytes_total[1m])) by (instance)'
+    },
+
+    # Packet Loss Metrics
+    {
+        'name': 'Network Drops',
+        'query': 'sum(rate(node_network_receive_drop_total[1m]) + rate(node_network_transmit_drop_total[1m])) by (instance)'
+    },
+    {
+        'name': 'Network Errors',
+        'query': 'sum(rate(node_network_receive_errs_total[1m]) + rate(node_network_transmit_errs_total[1m])) by (instance)'
+    },
+    {
+        'name': 'TCP Retransmissions',
+        'query': 'sum(rate(node_netstat_Tcp_RetransSegs[1m])) by (instance)'
+    },
+    {
+        'name': 'TCP/UDP Errors',
+        'query': 'sum(rate(node_netstat_Tcp_InErrs[1m]) + rate(node_netstat_Udp_InErrors[1m])) by (instance)'
+    },
+
+    # System Health Metrics
+    {
+        'name': 'Node Load Average',
+        'query': 'node_load1'
+    },
+    {
+        'name': 'Memory Available',
+        'query': 'node_memory_MemAvailable_bytes'
+    },
+    {
+        'name': 'CPU Usage',
+        'query': 'sum(rate(node_cpu_seconds_total{mode!="idle"}[1m])) by (instance)'
+    },
+    {
+        'name': 'TCP Connections',
+        'query': 'node_netstat_Tcp_CurrEstab'
+    },
+
+    # latency metrics
+    ################### important : 90s AT LEAST #################
+    {
+        'name': 'Frontend HTTP Latency (p95)',
+        'query': 'histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job="opentelemetry-demo/frontend"}[90s])) by (http_method, http_status_code, le))'
+    },
+    {
+        'name': 'Cart Service HTTP Latency (p95)',
+        'query': 'histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{job="opentelemetry-demo/cartservice"}[90s])) by (http_route, le)) * 1000'
+    },
+    {
+        'name': 'Product Catalog RPC Latency (p95)',
+        'query': 'histogram_quantile(0.95, sum(rate(rpc_server_duration_milliseconds_bucket{job="opentelemetry-demo/productcatalogservice"}[90s])) by (rpc_method, le))'
+    },
+    {
+        'name': 'Ad Service RPC Client Latency (p95)',
+        'query': 'histogram_quantile(0.95, sum(rate(rpc_client_duration_milliseconds_bucket{job="opentelemetry-demo/adservice"}[90s])) by (rpc_method, rpc_service, le))'
     }
 ]
 
@@ -58,7 +117,13 @@ PROMETHEUS_METRICS = [
 # services to monitor traces for
 JAEGER_SERVICES = [
     'frontend',
-    'recommendationservice'
+    'recommendationservice',
+    'productcatalogservice',
+    'cartservice',
+    'checkoutservice',
+    'currencyservice',
+    'paymentservice',
+    'shippingservice'
 ]
 
 class MetricsStats:
@@ -83,9 +148,10 @@ class MetricsStats:
             total = self.total_checks[name]
             failed = self.failed_checks[name]
             success_rate = ((total - failed) / total) * 100 if total > 0 else 0
+            status = "✅" if failed == 0 else "❌"
             summary.append(
-                f"{name}:\n"
-                f"  Total Checks: {total}\n"
+                f"{name} {status}:\n"
+                f"  Total Checks: {total}\n" 
                 f"  Failed Checks: {failed}\n"
                 f"  Success Rate: {success_rate:.1f}%"
             )

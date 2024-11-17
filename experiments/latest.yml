@@ -1,0 +1,246 @@
+# inject a packet delay of 0-90ms while increasing the otel metric inverval to 1s
+experiment:
+  version: 0.0.1
+  orchestrator: kubernetes
+  services:
+    jaeger:
+      name: astronomy-shop-jaeger-query
+      namespace: system-under-evaluation
+    prometheus:
+      [
+        {
+          name: astronomy-shop-prometheus-server,
+          namespace: system-under-evaluation,
+          target: sue,
+        },
+        {
+          name: kube-prometheus-kube-prome-prometheus,
+          namespace: oxn-external-monitoring,
+          target: oxn,
+        },
+      ]
+  responses:
+    - frontend_traces:
+        type: trace
+        service_name: frontend
+        left_window: 10s
+        right_window: 10s
+        limit: 1
+    - system_CPU:
+        type: metric
+        metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation"}[1m]))
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: oxn
+    - recommendation_deployment_CPU:
+        type: metric
+        metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation", pod=~"astronomy-shop-recommendationservice.*"}[90s])) by (pod)
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: oxn
+    - frontend_http_latency:
+        type: metric
+        metric_name: histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job="opentelemetry-demo/frontend"}[90s])) by (http_method, http_status_code, le))
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - cart_service_latency:
+        type: metric
+        metric_name: histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{job="opentelemetry-demo/cartservice"}[90s])) by (http_route, le)) * 1000
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - product_catalog_latency:
+        type: metric
+        metric_name: histogram_quantile(0.95, sum(rate(rpc_server_duration_milliseconds_bucket{job="opentelemetry-demo/productcatalogservice"}[90s])) by (rpc_method, le))
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - pod_status:
+        type: metric
+        metric_name: sum by (phase) (kube_pod_status_phase{namespace="system-under-evaluation"})
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - pod_restarts:
+        type: metric
+        metric_name: sum(kube_pod_container_status_restarts_total{namespace="system-under-evaluation"})
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - terminated_pods:
+        type: metric
+        metric_name: sum(kube_pod_container_status_terminated{namespace="system-under-evaluation"})
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - failed_spans:
+        type: metric
+        metric_name: sum(rate(otelcol_exporter_send_failed_spans[1m]))
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - network_bytes:
+        type: metric
+        metric_name: sum(rate(node_network_receive_bytes_total[1m]) + rate(node_network_transmit_bytes_total[1m])) by (instance)
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - network_drops:
+        type: metric
+        metric_name: sum(rate(node_network_receive_drop_total[1m]) + rate(node_network_transmit_drop_total[1m])) by (instance)
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - network_errors:
+        type: metric
+        metric_name: sum(rate(node_network_receive_errs_total[1m]) + rate(node_network_transmit_errs_total[1m])) by (instance)
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - tcp_retransmissions:
+        type: metric
+        metric_name: sum(rate(node_netstat_Tcp_RetransSegs[1m])) by (instance)
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - tcp_udp_errors:
+        type: metric
+        metric_name: sum(rate(node_netstat_Tcp_InErrs[1m]) + rate(node_netstat_Udp_InErrors[1m])) by (instance)
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - node_load:
+        type: metric
+        metric_name: node_load1
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - memory_available:
+        type: metric
+        metric_name: node_memory_MemAvailable_bytes
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - cpu_usage:
+        type: metric
+        metric_name: sum(rate(node_cpu_seconds_total{mode!="idle"}[1m])) by (instance)
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+    - tcp_connections:
+        type: metric
+        metric_name: node_netstat_Tcp_CurrEstab
+        left_window: 10s
+        right_window: 10s
+        step: 1
+        target: sue
+  treatments:
+    - empty_treatment:
+        action: empty
+        params: { duration: 5m }
+    #- stop_loadgen_deployment:
+    #    action: scale_deployment
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/component,
+    #      label: loadgenerator,
+    #      scale_to: 0,
+    #    }
+    #- add_security_context:
+    #    action: security_context_kubernetes
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/component,
+    #      label: recommendationservice,
+    #      capabilities: { add: ["NET_ADMIN"] },
+    #    }
+    # - delay_treatment:
+    #     action: delay
+    #     params: {
+    #       namespace: system-under-evaluation,
+    #       label_selector: app.kubernetes.io/name,
+    #       label: astronomy-shop-recommendationservice,
+    #       #service_name: node-exporter,
+    #       delay_time: 45ms,
+    #       delay_jitter: 45ms,
+    #       duration: 2m,
+    #       interface: eth0,
+    #     }
+    # - probabilistic_head_sampling_rate:
+    #     action: kube_probl
+    #     params: {
+    #       sampling_percentage: 5.0,
+    #       hash_seed: 22,
+    #       }
+    #- package_lost_treatment:
+    #    action: kubernetes_loss
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/name,
+    #      label: astronomy-shop-recommendationservice,
+    #      loss_percentage: 15.0,
+    #      duration: 10m,
+    #      interface: eth0,
+    #    }
+    #- empty_treatment:
+    #    action: empty
+    #    params: {
+    #      duration: 5m,
+    #    }
+    #- increase_otel_metric_interval:
+    #    action: kubernetes_otel_metrics_interval
+    #    params: {
+    #      namespace: system-under-evaluation,
+    #      label_selector: app.kubernetes.io/component,
+    #      label: recommendationservice,
+    #      interval: 15s,
+    #    }
+    #reloading the prometheus config is not as trivial as it seems to be
+    #- prometheus_scrape_interval:
+    #    action: kubernetes_prometheus_interval
+    #    params: {
+    #      interval: 5s,
+    #      evaluation_interval: 5s,
+    #      scrape_timeout: 3s,
+    #    }
+  sue:
+    compose: opentelemetry-demo/docker-compose.yml
+    exclude: [loadgenerator]
+    required: [
+        {
+          namespace: system-under-evaluation,
+          name: astronomy-shop-prometheus-server,
+        },
+      ] # {namespace: monitoring, name: not-running-service}
+    #required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}]
+  loadgen:
+    run_time: 10m
+    max_users: 500
+    spawn_rate: 100
+    locust_files:
+      [
+        { path: /opt/oxn/locust/locust_basic_interaction.py },
+        { path: /opt/oxn/locust/locust_otel_demo.py },
+      ]
+    target:
+      name: astronomy-shop-frontendproxy
+      namespace: system-under-evaluation
+      port: 8080

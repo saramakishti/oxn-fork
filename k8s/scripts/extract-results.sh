@@ -4,6 +4,10 @@ if [ $# -ne 2 ]; then
     echo "Example: $0 /opt/oxn/results /local/path/to/results"
     exit 1
 fi
+# experiment report generated in /opt/oxn/
+# example experiment report name : experimentsreport_2024-11-17_15-10-45.yaml 
+# store.h5 and trie.pickle
+
 
 REMOTE_PATH="$1"
 LOCAL_PATH="$2"

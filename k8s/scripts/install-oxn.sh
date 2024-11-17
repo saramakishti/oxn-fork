@@ -58,13 +58,13 @@ kubectl wait --for=condition=ready pod \
     -n oxn-external-monitoring \
     --timeout=300s
 
-echo "Copying Kepler dashboard to Grafana..."
-GF_POD=$(kubectl get pod \
-    -n oxn-external-monitoring \
-    -l app.kubernetes.io/name=grafana \
-    -o jsonpath="{.items[0].metadata.name}")
-kubectl cp "${DASHBOARDS_DIR}/kepler_dashboard.json" \  
-    "oxn-external-monitoring/${GF_POD}:/tmp/dashboards/kepler_dashboard.json"
+#echo "Copying Kepler dashboard to Grafana..."
+#GF_POD=$(kubectl get pod \
+#    -n oxn-external-monitoring \
+#    -l app.kubernetes.io/name=grafana \
+#    -o jsonpath="{.items[0].metadata.name}")
+#kubectl cp "${DASHBOARDS_DIR}/kepler_dashboard.json" \  
+#    "oxn-external-monitoring/${GF_POD}:/tmp/dashboards/kepler_dashboard.json"
 
 echo "Installing OpenTelemetry Demo..."
 helm repo add open-telemetry https://open-telemetry.github.io/opentelemetry-helm-charts
