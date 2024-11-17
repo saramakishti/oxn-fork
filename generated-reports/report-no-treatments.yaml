@@ -1,0 +1,368 @@
+report:
+  runs:
+    47a52093:
+      interactions:
+        interaction_0:
+          treatment_name: empty_treatment
+          treatment_start: 2024-11-17 20:53:44.574008
+          treatment_end: 2024-11-17 20:54:44.575229
+          treatment_type: EmptyTreatment
+          response_name: frontend_traces.duration
+          response_start: 2024-11-17 20:51:44.572371
+          response_end: 2024-11-17 20:55:44.575650
+          response_type: TraceResponseVariable
+          p_value: nan
+          test_statistic: nan
+          test_performed: welch t-test
+          store_key: experiments/k8s-test-successful.yml/47a52093/frontend_traces
+        interaction_1:
+          treatment_name: empty_treatment
+          treatment_start: 2024-11-17 20:53:44.574008
+          treatment_end: 2024-11-17 20:54:44.575229
+          treatment_type: EmptyTreatment
+          response_name: shippingservice_traces.duration
+          response_start: 2024-11-17 20:51:44.572371
+          response_end: 2024-11-17 20:55:44.575650
+          response_type: TraceResponseVariable
+          p_value: nan
+          test_statistic: nan
+          test_performed: welch t-test
+          store_key: experiments/k8s-test-successful.yml/47a52093/shippingservice_traces
+        interaction_2:
+          treatment_name: empty_treatment
+          treatment_start: 2024-11-17 20:53:44.574008
+          treatment_end: 2024-11-17 20:54:44.575229
+          treatment_type: EmptyTreatment
+          response_name: system_CPU
+          response_start: 2024-11-17 20:51:44.572371
+          response_end: 2024-11-17 20:55:44.575650
+          response_type: MetricResponseVariable
+          p_value: '0.19099374182469497'
+          test_statistic: '1.3114769361230918'
+          test_performed: welch t-test
+          store_key: experiments/k8s-test-successful.yml/47a52093/system_CPU
+      loadgen:
+        loadgen_start_time: 2024-11-17 20:52:44.572635
+        loadgen_end_time: 2024-11-17 20:55:44.242421
+        loadgen_total_requests: 450
+        loadgen_total_failures: 0
+        task_details:
+          34810a71aa044c6c:
+            url: /
+            verb: GET
+            requests: 29
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 3011.4942320005866
+            min_response_time: 19.654769000226224
+            max_response_time: 421.983919000013
+            avg_response_time: 103.8446286896754
+            median_response_time: 47
+          7c08eb49dee841da:
+            url: /api/products/L9ECAV7KIM
+            verb: GET
+            requests: 16
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 413.6273100011749
+            min_response_time: 8.4061350007687
+            max_response_time: 240.64393499975267
+            avg_response_time: 25.851706875073432
+            median_response_time: 11
+          68b2ce44151f4caa:
+            url: /api/products/2ZYFJ3GM2N
+            verb: GET
+            requests: 27
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 898.2334210013505
+            min_response_time: 7.962081000187027
+            max_response_time: 585.6139990000884
+            avg_response_time: 33.2679044815315
+            median_response_time: 12
+          71b837dbabd6483b:
+            url: /api/products/9SIQT8TOJO
+            verb: GET
+            requests: 23
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 514.3282950002686
+            min_response_time: 9.07388300038292
+            max_response_time: 270.4096950001258
+            avg_response_time: 22.362099782620373
+            median_response_time: 11
+          513f725bf5c042b3:
+            url: /api/recommendations?productIds=L9ECAV7KIM
+            verb: GET
+            requests: 7
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 652.5235920007617
+            min_response_time: 23.930256999847188
+            max_response_time: 320.0497389998418
+            avg_response_time: 93.21765600010882
+            median_response_time: 42
+          64b776136dff4157:
+            url: /api/products/HQTGWGPNH4
+            verb: GET
+            requests: 26
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 359.87491800096905
+            min_response_time: 8.344583000507555
+            max_response_time: 45.9607100001449
+            avg_response_time: 13.841343000037272
+            median_response_time: 11
+          fec4b13e018348a3:
+            url: /api/products/6E92ZMYYFZ
+            verb: GET
+            requests: 22
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 246.312587999455
+            min_response_time: 8.453719000499405
+            max_response_time: 22.124025999801233
+            avg_response_time: 11.196026727247954
+            median_response_time: 10
+          f3588e1af757476a:
+            url: /api/products/66VCHSJNUP
+            verb: GET
+            requests: 23
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 293.0577729985089
+            min_response_time: 7.8712849999647005
+            max_response_time: 25.241993999770784
+            avg_response_time: 12.741642304282994
+            median_response_time: 12
+          2fd43ad4b25b42ec:
+            url: /api/data/?contextKeys=binoculars
+            verb: GET
+            requests: 5
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 2578.939766000076
+            min_response_time: 38.42452000026242
+            max_response_time: 2281.2983379999423
+            avg_response_time: 515.7879532000152
+            median_response_time: 78
+          8c2fd3e6c63c49dc:
+            url: /api/products/LS4PSXUNUM
+            verb: GET
+            requests: 16
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 205.8305239997935
+            min_response_time: 9.254362999854493
+            max_response_time: 19.45972800058371
+            avg_response_time: 12.864407749987095
+            median_response_time: 12
+          580baa01d1794835:
+            url: /api/cart
+            verb: POST
+            requests: 74
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 2062.820793998071
+            min_response_time: 12.405473999933747
+            max_response_time: 553.4887109997726
+            avg_response_time: 27.87595667564961
+            median_response_time: 20
+          10aabd2c11264dc2:
+            url: /api/products/OLJCESPC7Z
+            verb: GET
+            requests: 22
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 285.8636359951561
+            min_response_time: 9.789385999283695
+            max_response_time: 26.541010000073584
+            avg_response_time: 12.993801636143457
+            median_response_time: 12
+          fcf3d8631e2f4e12:
+            url: /api/products/0PUK6V6EV0
+            verb: GET
+            requests: 25
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 346.1017770005128
+            min_response_time: 8.265208999546303
+            max_response_time: 40.9027599998808
+            avg_response_time: 13.844071080020512
+            median_response_time: 11
+          0e740191438e4966:
+            url: /api/cart
+            verb: GET
+            requests: 33
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 570.3176230035751
+            min_response_time: 9.343335999801639
+            max_response_time: 93.16651400058618
+            avg_response_time: 17.28235221222955
+            median_response_time: 13
+          cc210b0b0ad44493:
+            url: /api/checkout
+            verb: POST
+            requests: 24
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 4171.004504998564
+            min_response_time: 48.3332869998776
+            max_response_time: 2387.695160000476
+            avg_response_time: 173.79185437494016
+            median_response_time: 83
+          d47ff63c32494727:
+            url: /api/recommendations?productIds=9SIQT8TOJO
+            verb: GET
+            requests: 4
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 203.34396099951846
+            min_response_time: 29.3631770000502
+            max_response_time: 90.04723999987618
+            avg_response_time: 50.835990249879615
+            median_response_time: 40
+          3ec03f51ff3a4130:
+            url: /api/data/?contextKeys=telescopes
+            verb: GET
+            requests: 6
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 307.69600000076025
+            min_response_time: 36.10571900026116
+            max_response_time: 68.29476900020381
+            avg_response_time: 51.282666666793375
+            median_response_time: 40
+          759d1ad948774924:
+            url: /api/data/?contextKeys=assembly
+            verb: GET
+            requests: 7
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 358.40037899924937
+            min_response_time: 35.63160299927404
+            max_response_time: 65.95837299937557
+            avg_response_time: 51.20005414274991
+            median_response_time: 54
+          2a149afe15374bfe:
+            url: /api/data/
+            verb: GET
+            requests: 10
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 573.8582100002532
+            min_response_time: 35.43917199931457
+            max_response_time: 140.56846300081816
+            avg_response_time: 57.38582100002532
+            median_response_time: 48
+          29d8cf4e41d84701:
+            url: /api/data/?contextKeys=accessories
+            verb: GET
+            requests: 4
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 196.75759199890308
+            min_response_time: 42.067785999279295
+            max_response_time: 63.655724999989616
+            avg_response_time: 49.18939799972577
+            median_response_time: 45
+          824a56e0f7f2449d:
+            url: /api/products/1YMWWN1N4O
+            verb: GET
+            requests: 16
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 202.62895799896796
+            min_response_time: 8.716485999684664
+            max_response_time: 21.43969600001583
+            avg_response_time: 12.664309874935498
+            median_response_time: 11
+          af4c433c112c4348:
+            url: /api/recommendations?productIds=HQTGWGPNH4
+            verb: GET
+            requests: 2
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 57.159918999786896
+            min_response_time: 27.47615299995232
+            max_response_time: 29.683765999834577
+            avg_response_time: 28.579959499893448
+            median_response_time: 27.47615299995232
+          4e124968b5834470:
+            url: /api/data/?contextKeys=travel
+            verb: GET
+            requests: 7
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 361.7187230001946
+            min_response_time: 36.495479000222986
+            max_response_time: 78.11954699991475
+            avg_response_time: 51.674103285742085
+            median_response_time: 52
+          74364d99678a444e:
+            url: /api/recommendations?productIds=66VCHSJNUP
+            verb: GET
+            requests: 5
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 176.77838100098597
+            min_response_time: 23.165317999882973
+            max_response_time: 68.1923240008473
+            avg_response_time: 35.355676200197195
+            median_response_time: 28
+          7d2ec82646704374:
+            url: /api/recommendations?productIds=2ZYFJ3GM2N
+            verb: GET
+            requests: 6
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 154.59510399887222
+            min_response_time: 23.2037069999933
+            max_response_time: 29.614174000016646
+            avg_response_time: 25.765850666478702
+            median_response_time: 24
+          a6f322356d4a42eb:
+            url: /api/data/?contextKeys=books
+            verb: GET
+            requests: 4
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 232.36582499885117
+            min_response_time: 37.21688399946288
+            max_response_time: 99.09580899966386
+            avg_response_time: 58.09145624971279
+            median_response_time: 42
+          07903deedc6e477d:
+            url: /api/recommendations?productIds=LS4PSXUNUM
+            verb: GET
+            requests: 3
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 86.91663199988398
+            min_response_time: 27.56502400006866
+            max_response_time: 31.446087999938754
+            avg_response_time: 28.97221066662799
+            median_response_time: 28
+          9ede6f8d33074744:
+            url: /api/recommendations?productIds=1YMWWN1N4O
+            verb: GET
+            requests: 3
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 86.12623100088967
+            min_response_time: 26.614900000822672
+            max_response_time: 32.06490499997017
+            avg_response_time: 28.708743666963226
+            median_response_time: 27
+          73e98fc1f2f14c0c:
+            url: /api/recommendations?productIds=OLJCESPC7Z
+            verb: GET
+            requests: 1
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 23.824951000278816
+            min_response_time: 23.824951000278816
+            max_response_time: 23.824951000278816
+            avg_response_time: 23.824951000278816
+            median_response_time: 23.824951000278816

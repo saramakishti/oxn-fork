@@ -33,16 +33,24 @@ experiment:
     - empty_treatment:
         action: empty
         params: {
-          duration: 1m,
+          duration: 5m,
+        }
+    - kill_recommendation_service:
+        action: kubernetes_kill
+        params: {
+          namespace: system-under-evaluation,
+          label_selector: app.kubernetes.io/component,
+          label: recommendationservice,
+          amount_to_kill: 1,
         }
   sue:
     compose: opentelemetry-demo/docker-compose.yml
     exclude: [loadgenerator]
     required: [{namespace: system-under-evaluation, name: astronomy-shop-prometheus-server}]
   loadgen:
-    run_time: 2m
-    max_users: 10
-    spawn_rate: 5
+    run_time: 10m
+    max_users: 50
+    spawn_rate: 10
     locust_files: [
       { path: /opt/oxn/locust/locust_basic_interaction.py },
       { path: /opt/oxn/locust/locust_otel_demo.py },

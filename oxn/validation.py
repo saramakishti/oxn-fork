@@ -236,6 +236,22 @@ syntactic_schema = schema.Schema(
                     "namespace": str,
                     "port": int,
                 },
+                schema.Optional("stages"): [
+                    {
+                        "duration": int,
+                        "users": int,
+                        "spawn_rate": int,
+                    }
+                ],
+                schema.Optional("tasks"): [
+                    {
+                        schema.Optional("name"): str,
+                        "endpoint": str,
+                        "verb": str,
+                        schema.Optional("weight"): int,
+                        schema.Optional("params"): dict,
+                    }
+                ],
             },
         },
     }

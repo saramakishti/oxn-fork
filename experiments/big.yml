@@ -25,7 +25,7 @@ experiment:
         limit: 1
     - system_CPU:
         type: metric
-        metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation"}[1m]))
+        metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation"}[90s]))
         left_window: 10s
         right_window: 10s
         step: 1
@@ -39,21 +39,21 @@ experiment:
         target: oxn
     - recommendationservice_kepler_package_joules:
         type: metric
-        metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_package_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[1m]))
+        metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_package_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[90s]))
         left_window: 10s
         right_window: 10s
         step: 1
         target: oxn
     - recommendationservice_kepler_dram_joules:
         type: metric
-        metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_dram_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[1m]))
+        metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_dram_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[90s]))
         left_window: 10s
         right_window: 10s
         step: 1
         target: oxn
     - recommendationservice_kepler_other_joules:
         type: metric
-        metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_other_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[1m]))
+        metric_name: sum by (pod_name, container_namespace) (irate(kepler_container_other_joules_total{container_namespace=~"system-under-evaluation", pod_name=~"astronomy-shop-recommendationservice.*"}[90s]))
         left_window: 10s
         right_window: 10s
         step: 1
@@ -74,21 +74,21 @@ experiment:
         target: sue
     - recommendations_total:
         type: metric
-        metric_name: increase(app_recommendations_counter_total[1m])
+        metric_name: increase(app_recommendations_counter_total[90s])
         left_window: 10s
         right_window: 10s
         step: 1
         target: sue
     - sampling_rates:
         type: metric
-        metric_name: increase(otelcol_processor_probabilistic_sampler_count_traces_sampled[1m])
+        metric_name: increase(otelcol_processor_probabilistic_sampler_count_traces_sampled[90s])
         left_window: 10s
         right_window: 10s
         step: 1
         target: sue
     - kepler_metric_all_namespace:
         type: metric
-        metric_name: sum by (pod_name, container_name, container_namespace, node)(irate(kepler_container_joules_total{container_namespace="system-under-evaluation"}[1m]))
+        metric_name: sum by (pod_name, container_name, container_namespace, node)(irate(kepler_container_joules_total{container_namespace="system-under-evaluation"}[90s]))
         left_window: 10s
         right_window: 10s
         step: 1
