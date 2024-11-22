@@ -10,16 +10,16 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-# create GCS bucket
-terraform apply -auto-approve
-
 # Configuration variables
 CLUSTER_NAME="oxn.dev.com"          # If you want to change the cluster name, you need to update the  variable in down-cluster.sh and install-oxn.sh
-PROJECT_ID=$1                       # GCP project ID
+GCP_PROJECT_ID=$1                   # GCP project ID
 ZONE="europe-west1-b"               # Single zone since HA is not needed
-NODE_COUNT=1
+NODE_COUNT=3
 CONTROL_PLANE_SIZE="e2-standard-2"  
-NODE_SIZE="e2-standard-2"           
+NODE_SIZE="e2-standard-2"       
+
+# create GCS bucket
+terraform apply -var="project_id=${GCP_PROJECT_ID}" -auto-approve
 
 # Get the state store bucket name from Terraform output
 export KOPS_STATE_STORE="gs://$(terraform output -raw kops_state_store_bucket_name)"

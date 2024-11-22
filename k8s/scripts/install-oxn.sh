@@ -42,15 +42,15 @@ helm install kube-prometheus prometheus-community/kube-prometheus-stack \
     --version 62.5.1 \
     -f "${MANIFESTS_DIR}/values_kube_prometheus.yaml"
 
-echo "Installing Kepler..."
-helm repo add kepler https://sustainable-computing-io.github.io/kepler-helm-chart
-helm repo update
-helm install kepler kepler/kepler \
-    --namespace oxn-external-monitoring \
-    --create-namespace \
-    --set serviceMonitor.enabled=true \
-    --set serviceMonitor.labels.release=kube-prometheus \
-    -f "${MANIFESTS_DIR}/values_kepler.yaml"
+#echo "Installing Kepler..."
+#helm repo add kepler https://sustainable-computing-io.github.io/kepler-helm-chart
+#helm repo update
+#helm install kepler kepler/kepler \
+#    --namespace oxn-external-monitoring \
+#    --create-namespace \
+#    --set serviceMonitor.enabled=true \
+#    --set serviceMonitor.labels.release=kube-prometheus \
+#    -f "${MANIFESTS_DIR}/values_kepler.yaml"
 
 echo "Waiting for Grafana pod to be ready..."
 kubectl wait --for=condition=ready pod \
@@ -74,6 +74,12 @@ helm install astronomy-shop open-telemetry/opentelemetry-demo \
     --create-namespace \
     -f "${MANIFESTS_DIR}/values_opentelemetry_demo.yaml"
 
+echo "Waiting for OpenTelemetry Demo pods to be ready..."
+kubectl wait --for=condition=ready pod \
+    --all \
+    -n system-under-evaluation \
+    --timeout=300s
+
 echo "Copying kubeconfig and OXN source to control plane node..."
 CONTROL_PLANE_NODE=$(kubectl get nodes --selector=node-role.kubernetes.io/control-plane -o jsonpath='{.items[0].metadata.name}')
 OXN_SOURCE_DIR="${SCRIPT_DIR}/../.."
@@ -89,7 +95,7 @@ gcloud compute ssh "${CONTROL_PLANE_NODE}" --command="sudo mv /tmp/kubeconfig ~/
 
 # Copy OXN source files
 echo "Creating zip archive of source code..."
-(cd "${OXN_SOURCE_DIR}" && zip -r /tmp/oxn-source.zip ./*)
+(cd "${OXN_SOURCE_DIR}" && zip -r /tmp/oxn-source.zip ./* -x "k8s/scripts/.terraform/*" -x "venv/*")
 gcloud compute scp /tmp/oxn-source.zip "${CONTROL_PLANE_NODE}:/tmp/"
 
 # Install Python and OXN

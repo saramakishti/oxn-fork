@@ -1,14 +1,24 @@
-# Configure the Google Cloud provider
+variable "project_id" {
+  description = "GCP project ID"
+  type        = string
+}
+
+# random suffix
+resource "random_id" "bucket_suffix" {
+  byte_length = 4
+}
+
+
 provider "google" {
-  project = "modified-alloy-439412-j6"  # GCP project ID
+  project = var.project_id
   region  = "europe-west1-b"       
 }
 
 # Create a GCS bucket for the kOps state store
 resource "google_storage_bucket" "kops_state_store_oxn" {
-  name     = "kops-state-store-bucket-oxn" # globally unique bucket name
+  name     = "kops-state-store-${random_id.bucket_suffix.hex}"
   location = "EU"
-  force_destroy = true                 # allows bucket to be destroyed without emptying
+  force_destroy = true                # allows bucket to be destroyed without emptying
 
   lifecycle_rule {
     action {

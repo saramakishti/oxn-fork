@@ -103,3 +103,12 @@ Jaeger: http://localhost:8080/jaeger/ui/
 kubectl port-forward -n system-under-evaluation svc/astronomy-shop-prometheus-server 9090:9090
 ```
 then visit http://localhost:9090/
+
+
+### To upgrade the Helm chart with new values for the OpenTelemetry Demo:
+```bash
+# from oxn/k8s/
+helm upgrade astronomy-shop open-telemetry/opentelemetry-demo \
+    --namespace system-under-evaluation \
+    -f "manifests/values_opentelemetry_demo.yaml"
+```
