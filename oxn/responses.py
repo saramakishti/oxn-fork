@@ -28,6 +28,8 @@ class MetricResponseVariable(ResponseVariable):
             name: str,
             experiment_start: float,
             experiment_end: float,
+            right_window: str,
+            left_window: str,
             description: dict,
             target: str,
     ):
@@ -53,6 +55,8 @@ class MetricResponseVariable(ResponseVariable):
         self.end = self.experiment_end + utils.time_string_to_seconds(
             description["right_window"]
         )
+        self.right_window = right_window
+        self.left_window = left_window
         """Timestamp of the end of the observation period relative to experiment end"""
         self.prometheus = Prometheus(orchestrator=self.orchestrator, target=target)
         """Prometheus API to fetch metric data represented by this response variable"""
@@ -92,13 +96,12 @@ class MetricResponseVariable(ResponseVariable):
             label_column: str,
             label: str,
     ) -> None:
-        """
-        Label a Prometheus dataframe. Note that Prometheus returns timestamps in seconds as a float
-
-        """
+        """Label a Prometheus dataframe. Note that Prometheus returns timestamps in seconds as a float"""
+        if self.data is None or self.data.empty:
+            self.data = pd.DataFrame(columns=['timestamp'])
+            return
         
         predicate = self.data["timestamp"].between(treatment_start, treatment_end)
-        
         self.data[label_column] = np.where(predicate, label, "NoTreatment")
 
     @staticmethod
@@ -166,20 +169,25 @@ class MetricResponseVariable(ResponseVariable):
             )
 
     def observe(self):
-        prometheus_query = self.prometheus.build_query(
-            metric_name=self.metric_name,
-            label_dict=self.labels,
-        )
-        prometheus_metrics = self.prometheus.range_query(
-            query=prometheus_query,
-            start=self.start,
-            end=self.end,
-            step=self.step,
-        )
-        self.data = self._range_query_to_df(
-            prometheus_metrics, metric_column_name=self.metric_name
-        )
-        return self.data
+        try:
+            prometheus_query = self.prometheus.build_query(
+                metric_name=self.metric_name,
+                label_dict=self.labels,
+            )
+            prometheus_metrics = self.prometheus.range_query(
+                query=prometheus_query,
+                start=self.start,
+                end=self.end,
+                step=self.step,
+            )
+            self.data = self._range_query_to_df(
+                prometheus_metrics, metric_column_name=self.metric_name
+            )
+            return self.data
+        except PrometheusException as e:
+            # Initialize with empty DataFrame instead of None
+            self.data = pd.DataFrame(columns=['timestamp'])
+            raise e
 
 
 class TraceResponseVariable(ResponseVariable):
@@ -189,6 +197,8 @@ class TraceResponseVariable(ResponseVariable):
             name: str,
             experiment_start: float,
             experiment_end: float,
+            right_window: str,
+            left_window: str,
             description: dict,
     ):
         super(TraceResponseVariable, self).__init__(
@@ -210,6 +220,8 @@ class TraceResponseVariable(ResponseVariable):
         self.end = self.experiment_end + utils.time_string_to_seconds(
             description["right_window"]
         )
+        self.right_window = right_window
+        self.left_window = left_window
         """UTC Timestamp of the end of the observation period relative to the experiment end"""
         self.jaeger = Jaeger(orchestrator=self.orchestrator)
         """Jaeger API to observe trace data"""
@@ -263,6 +275,11 @@ class TraceResponseVariable(ResponseVariable):
             label: str,
     ) -> None:
         """Label a dataframe containing Jaeger spans depending on the span start timestamp"""
+        if self.data is None or self.data.empty:
+            # TODO handle this better
+            self.data = pd.DataFrame(columns=['start_time'])
+            return
+
         scaled_treatment_start = utils.to_microseconds(treatment_start)
         scaled_treatment_end = utils.to_microseconds(treatment_end)
         predicate = (self.data["start_time"] >= scaled_treatment_start) & (
@@ -329,13 +346,17 @@ class TraceResponseVariable(ResponseVariable):
 
     def observe(self) -> pd.DataFrame:
         """Observe the data service represented by this response variable"""
-        traces = self.jaeger.search_traces(
-            service_name=self.service_name,
-            start=self._jaeger_start_timestamp,
-            end=self._jaeger_end_timestamp,
-            limit=self.limit,
-        )
-
-        trace_df = self._tabulate(trace_json=traces)
-        self.data = trace_df
-        return trace_df
+        try:
+            traces = self.jaeger.search_traces(
+                service_name=self.service_name,
+                start=self._jaeger_start_timestamp,
+                end=self._jaeger_end_timestamp,
+                limit=self.limit,
+            )
+            trace_df = self._tabulate(trace_json=traces)
+            self.data = trace_df
+            return trace_df
+        except JaegerException as e:
+            # TODO handle this better
+            self.data = pd.DataFrame(columns=['start_time'])
+            raise e

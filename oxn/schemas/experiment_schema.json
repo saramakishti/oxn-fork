@@ -1,0 +1,255 @@
+{
+    "$schema": "http://json-schema.org/draft-07/schema#",
+    "type": "object",
+    "properties": {
+        "experiment": {
+            "type": "object",
+            "properties": {
+                "name": {
+                    "type": "string"
+                },
+                "version": {
+                    "type": "string"
+                },
+                "orchestrator": {
+                    "type": "string"
+                },
+                "services": {
+                    "type": "object",
+                    "properties": {
+                        "jaeger": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "namespace": {
+                                    "type": "string"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "namespace"
+                            ]
+                        },
+                        "prometheus": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "namespace": {
+                                        "type": "string"
+                                    },
+                                    "target": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "namespace",
+                                    "target"
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "jaeger",
+                        "prometheus"
+                    ]
+                },
+                "responses": {
+                    "type": "array",
+                    "items": {
+                        "oneOf": [
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "target": {
+                                        "type": "string"
+                                    },
+                                    "metric_name": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "const": "metric"
+                                    },
+                                    "step": {
+                                        "type": "integer"
+                                    },
+                                    "left_window": {
+                                        "type": "string"
+                                    },
+                                    "right_window": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "target",
+                                    "metric_name",
+                                    "type",
+                                    "step",
+                                    "left_window",
+                                    "right_window"
+                                ]
+                            },
+                            {
+                                "type": "object",
+                                "properties": {
+                                    "name": {
+                                        "type": "string"
+                                    },
+                                    "type": {
+                                        "const": "trace"
+                                    },
+                                    "service_name": {
+                                        "type": "string"
+                                    },
+                                    "left_window": {
+                                        "type": "string"
+                                    },
+                                    "right_window": {
+                                        "type": "string"
+                                    },
+                                    "limit": {
+                                        "type": "integer"
+                                    }
+                                },
+                                "required": [
+                                    "name",
+                                    "type",
+                                    "service_name",
+                                    "left_window",
+                                    "right_window"
+                                ]
+                            }
+                        ]
+                    }
+                },
+                "treatments": {
+                    "type": "array",
+                    "items": {
+                        "type": "object",
+                        "patternProperties": {
+                            "^.*$": {
+                                "type": "object",
+                                "properties": {
+                                    "action": {
+                                        "type": "string"
+                                    },
+                                    "params": {
+                                        "type": "object"
+                                    }
+                                },
+                                "required": [
+                                    "action",
+                                    "params"
+                                ]
+                            }
+                        },
+                        "additionalProperties": false
+                    }
+                },
+                "sue": {
+                    "type": "object",
+                    "properties": {
+                        "compose": {
+                            "type": "string"
+                        },
+                        "exclude": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "include": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "required": {
+                            "type": "array",
+                            "items": {
+                                "type": "object",
+                                "properties": {
+                                    "namespace": {
+                                        "type": "string"
+                                    },
+                                    "name": {
+                                        "type": "string"
+                                    }
+                                },
+                                "required": [
+                                    "namespace",
+                                    "name"
+                                ]
+                            }
+                        }
+                    },
+                    "required": [
+                        "compose"
+                    ]
+                },
+                "loadgen": {
+                    "type": "object",
+                    "properties": {
+                        "run_time": {
+                            "type": "string"
+                        },
+                        "max_users": {
+                            "type": "integer"
+                        },
+                        "spawn_rate": {
+                            "type": "integer"
+                        },
+                        "locust_files": {
+                            "type": "array",
+                            "items": {
+                                "type": "string"
+                            }
+                        },
+                        "target": {
+                            "type": "object",
+                            "properties": {
+                                "name": {
+                                    "type": "string"
+                                },
+                                "namespace": {
+                                    "type": "string"
+                                },
+                                "port": {
+                                    "type": "integer"
+                                }
+                            },
+                            "required": [
+                                "name",
+                                "namespace",
+                                "port"
+                            ]
+                        }
+                    },
+                    "required": [
+                        "run_time"
+                    ]
+                }
+            },
+            "required": [
+                "version",
+                "orchestrator",
+                "responses",
+                "sue",
+                "loadgen"
+            ]
+        }
+    },
+    "required": [
+        "experiment"
+    ]
+}

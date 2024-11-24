@@ -6,18 +6,18 @@ Connection: Central component that coordinates between treatments, load generati
  """
 
 import logging
-import schema
 import yaml
+from jsonschema import validate
 
 from .runner import ExperimentRunner
 from .docker_orchestration import DockerComposeOrchestrator
 from .kubernetes_orchestrator import KubernetesOrchestrator
 from .report import Reporter
-from .store import write_dataframe
+from .store import configure_output_path, write_dataframe, write_json_data
 from .loadgen import LoadGenerator
 from .locust_file_loadgenerator import LocustFileLoadgenerator
 from .utils import utc_timestamp
-from .validation import syntactic_schema
+from .validation import load_schema
 from .context import Context
 from .errors import OxnException, OrchestrationException
 
@@ -31,7 +31,7 @@ class Engine:
     This class encapsulates all behavior needed to execute observability experiments.
     """
 
-    def __init__(self, configuration_path=None, report_path=None, treatment_file=None):
+    def __init__(self, configuration_path=None, report_path=None, out_path=None, out_formats=None, treatment_file=None):
         assert configuration_path is not None, "Configuration path must be specified"
         self.config = configuration_path
         """The path to the configuration file for this engine"""
@@ -42,6 +42,10 @@ class Engine:
         assert report_path is not None, "Report path must be specified"
         self.reporter = Reporter(report_path=report_path)
         """A reference to a reporter instance"""
+        self.out_path = out_path
+        """The path to write the experiment data to"""
+        self.out_formats = out_formats
+        """The formats to write the experiment data to"""
         self.context = Context(treatment_file_path=treatment_file)
         """A reference to a treatment context"""
         self.additional_treatments = self.context.load_treatment_file()
@@ -56,6 +60,9 @@ class Engine:
         """Status of the load generator"""
         self.sue_running = False
         """Status of the sue"""
+        # configure the output path for HDF storage
+        if self.out_path:
+            configure_output_path(self.out_path)
 
     def read_experiment_specification(self):
         """Read the experiment specification file and confirm that its valid yaml"""
@@ -72,10 +79,12 @@ class Engine:
     def validate_syntax(self):
         """Validate the specification syntactically"""
         try:
-            syntactic_schema.validate(data=self.spec)
-        except schema.SchemaError as e:
+            schema = load_schema()
+            validate(instance=self.spec, schema=schema)
+        except Exception as e:
             raise OxnException(
-                message="Can't validate experiment spec", explanation=str(e)
+                message="Can't validate experiment spec", 
+                explanation=str(e)
             )
 
     def run(
@@ -155,12 +164,23 @@ class Engine:
             self.loadgen_running = False
             logger.info("Stopped load generation")
             for _, response in self.runner.observer.variables().items():
-                write_dataframe(
-                    dataframe=response.data,
-                    experiment_key=self.runner.config_filename,
-                    run_key=self.runner.short_id,
-                    response_key=response.name,
-                )
+                # default is hdf
+                if self.out_formats and 'hdf' in self.out_formats:
+                    write_dataframe(
+                        dataframe=response.data,
+                        experiment_key=self.runner.config_filename,
+                        run_key=self.runner.short_id,
+                        response_key=response.name,
+                    )
+                if self.out_formats and 'json' in self.out_formats:
+                    write_json_data(
+                        data=response.data,
+                        experiment_key=self.runner.config_filename,
+                        run_key=self.runner.short_id,
+                        response_key=response.name,
+                        out_path=self.out_path,
+                    )
+
                 logger.debug(
                     f"Experiment {self.runner.config_filename}: DataFrame: {len(response.data)} rows"
                 )
