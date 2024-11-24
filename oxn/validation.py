@@ -2,51 +2,55 @@
 Purpose: Validates experiment specifications.
 Functionality: Implements syntactic and semantic validation of experiment configurations.
 Connection: Used by the Engine to ensure the experiment configuration is correct before execution.
-
-Module to handle validation of experiment specifications"""
+"""
+import os
+import json
+import jsonschema
 from typing import Set, List
-
-import schema
-
-from .models import orchestrator
+from pathlib import Path
 
 from .errors import OxnException
 from .jaeger import Jaeger
 from .prometheus import Prometheus
+from .settings import SCHEMA_PATH
 
+def load_schema():
+    """Load the JSON schema file"""
+    with open(SCHEMA_PATH) as f:
+        return json.load(f)
 
 class SemanticValidator:
     """Semantic validation for experiment specifications"""
 
     def __init__(self, experiment_spec: dict):
         self.experiment_spec = experiment_spec
-        """The experiment specification to validate"""
         self.prometheus = Prometheus()
-        """API to Prometheus required for label values and metric names"""
         self.jaeger = Jaeger()
-        """API to Jaeger to required for service names"""
         self.metric_names = None
-        """A set of metric names from Prometheus"""
         self.label_names = None
-        """A set of label names from Prometheus"""
         self.label_values = None
-        """A set of label values from Prometheus"""
         self.service_names = None
-        """A set of service names from Jaeger"""
-        self.metric_rvar_type = "metric"
-        """Constant to represent the metric rvar type"""
-        self.trace_rvar_type = "trace"
-        """Constant to represent the trace rvar type"""
         self.messages: List[str] = []
-        """List of messages to pass to CLI in case of failing validation"""
+        
+        # Perform syntactic validation
+        self.validate_syntax()
+        
+        # Then populate data for semantic validation
         self._populate_metrics()
-        """Populate the metric name set"""
         self._populate_labels()
-        """Populate the label name set"""
         self._populate_label_values()
-        """Populate the label value set"""
         self._populate_service_names()
-        """Populate the service name set """
+
+    def validate_syntax(self):
+        """Validate the experiment specification against JSON schema"""
+        try:
+            schema = load_schema()
+            jsonschema.validate(instance=self.experiment_spec, schema=schema)
+        except jsonschema.exceptions.ValidationError as e:
+            raise OxnException(
+                message="Experiment specification failed JSON schema validation",
+                explanation=str(e)
+            )
 
     def _populate_service_names(self) -> Set[str]:
         """Call jaeger to get a list of service names from Jaeger traces"""
@@ -158,86 +162,3 @@ class SemanticValidator:
                 message="Experiment specification did not pass semantic validation",
                 explanation=message,
             )
-
-
-metric_response_schema = {
-    str: {
-        "target": str,
-        "metric_name": str,
-        "type": "metric",
-        "step": int,
-        "left_window": str,
-        "right_window": str,
-        schema.Optional("labels"): {schema.Optional(str): schema.Optional(str)},
-    }
-}
-"""Schema to validate metric responses syntactically"""
-
-trace_response_schema = {
-    str: {
-        "type": "trace",
-        "service_name": str,
-        "left_window": str,
-        "right_window": str,
-        schema.Optional("limit"): int,
-    }
-}
-"""Schema to validate trace responses syntactically"""
-
-syntactic_schema = schema.Schema(
-    {
-        "experiment": {
-            "version": str,
-            "orchestrator": str,
-            schema.Optional("services"): {
-                "jaeger": {
-                    "name": str,
-                    "namespace": str,
-                },
-                # prometheus is a list containing multiple dicts with the paramters name, namespace and target
-                "prometheus": [
-                    {
-                        "name": str,
-                        "namespace": str,
-                        "target": str,
-                    }
-                ],
-                
-            },
-            "responses": [
-                schema.Or(metric_response_schema, trace_response_schema),
-            ],
-            schema.Optional("treatments"): [
-                {
-                    str: {
-                        "action": str,
-                        "params": dict,
-                    }
-                }
-            ],
-            "sue": {
-                "compose": str,
-                schema.Optional("exclude"): list[str],
-                schema.Optional("include"): list[str],
-                schema.Optional("required"): [
-                    {
-                        "namespace": str,
-                        "name": str,
-                    }
-                ]
-            },
-            "loadgen": {
-                "run_time": str,
-                schema.Optional("max_users"): int,
-                schema.Optional("spawn_rate"): int,
-                schema.Optional("locust_files"): list[str],
-                schema.Optional("target"): {
-                    "name": str,
-                    "namespace": str,
-                    "port": int,
-                },
-            },
-        },
-    }
-)
-"""Schema to validate an experiment specification syntactically"""

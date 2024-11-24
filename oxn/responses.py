@@ -28,6 +28,8 @@ class MetricResponseVariable(ResponseVariable):
             name: str,
             experiment_start: float,
             experiment_end: float,
+            right_window: str,
+            left_window: str,
             description: dict,
             target: str,
     ):
@@ -53,6 +55,8 @@ class MetricResponseVariable(ResponseVariable):
         self.end = self.experiment_end + utils.time_string_to_seconds(
             description["right_window"]
         )
+        self.right_window = right_window
+        self.left_window = left_window
         """Timestamp of the end of the observation period relative to experiment end"""
         self.prometheus = Prometheus(orchestrator=self.orchestrator, target=target)
         """Prometheus API to fetch metric data represented by this response variable"""
@@ -193,6 +197,8 @@ class TraceResponseVariable(ResponseVariable):
             name: str,
             experiment_start: float,
             experiment_end: float,
+            right_window: str,
+            left_window: str,
             description: dict,
     ):
         super(TraceResponseVariable, self).__init__(
@@ -214,6 +220,8 @@ class TraceResponseVariable(ResponseVariable):
         self.end = self.experiment_end + utils.time_string_to_seconds(
             description["right_window"]
         )
+        self.right_window = right_window
+        self.left_window = left_window
         """UTC Timestamp of the end of the observation period relative to the experiment end"""
         self.jaeger = Jaeger(orchestrator=self.orchestrator)
         """Jaeger API to observe trace data"""
