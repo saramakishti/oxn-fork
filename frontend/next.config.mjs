@@ -1,4 +1,6 @@
 /** @type {import('next').NextConfig} */
-const nextConfig = {};
-
-export default nextConfig;
+const nextConfig = {
+    output: 'standalone', // Aktiviert die Standalone-Option
+  };
+  
+  export default nextConfig;
