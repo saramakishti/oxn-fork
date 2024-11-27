@@ -14,23 +14,62 @@ The Integers as corresponding values will be the corresponding index values to b
 
 '''
 SERVICES = {
-     # here N/A also maps onto the frontend-proxy
      "N/A": 0,
-     "frontend-proxy" : 0,
-     "frontend" : 1,
-     "featureflagservice" :2,
-     "accountingservice" : 3,
-     "adservice" : 4,
-     "checkoutservice": 5,
-     "currencyservie": 6,
-     "emailservice": 7,
-     # ffpostgres is not instrumented
-     "frauddetectionservice" : 8,
-     "paymentservice" : 9,
-     "productcatalogservice": 10,
-     "quoteservice": 11,
-     "recommendationservice": 12,
-     "shippingservice": 13,
-     "cartservice": 14
+     "frontend-proxy": 1,
+     "frontend": 2,
+     "featureflagservice": 3,
+     "accountingservice": 4,
+     "adservice": 5,
+     "checkoutservice": 6,
+     "currencyservice": 7,
+     "emailservice": 8,
+     "frauddetectionservice": 9,
+     "paymentservice": 10,
+     "productcatalogservice": 11,
+     "quoteservice": 12,
+     "recommendationservice": 13,
+     "shippingservice": 14,
+     "cartservice": 15
 }
+
+
+SERVICES = {
+    "N/A": 0,
+    "frontend-proxy": 1,
+    "frontend": 2,
+    "featureflagservice": 3,
+    "accountingservice": 4,
+    "adservice": 5,
+    "checkoutservice": 6,
+    "currencyservice": 7,
+    "emailservice": 8,
+    "frauddetectionservice": 9,
+    "paymentservice": 10,
+    "productcatalogservice": 11,
+    "quoteservice": 12,
+    "recommendationservice": 13,
+    "shippingservice": 14,
+    "cartservice": 15
+}
+
+
+SERVICES_REVERSE = {
+    0: "N/A",
+    1: "frontend-proxy",
+    2: "frontend",
+    3: "featureflagservice",
+    4: "accountingservice",
+    5: "adservice",
+    6: "checkoutservice",
+    7: "currencyservice",
+    8: "emailservice",
+    9: "frauddetectionservice",
+    10: "paymentservice",
+    11: "productcatalogservice",
+    12: "quoteservice",
+    13: "recommendationservice",
+    14: "shippingservice",
+    15: "cartservice"
+}
+
 
