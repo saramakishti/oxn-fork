@@ -24,16 +24,20 @@ class WeightedAdjMatrix:
       each span represents a unit of work, if a microservice gets several requests within a trace there should be several spans -> we can go through linearly'''
      def _generate_adjacency_matrix_for_trace(self, single_trace_df : pd.DataFrame) -> list[list[tuple[int, float]]]:
           # this is the matrix that holds tuples for every (number requests , sum(request_times))
-          adjency_matrix = [[(-1, 0.1) for _ in range(len(self.service_names))] for _ in range(len(self.service_names))]
+          adjency_matrix = [[(0, 0.0) for _ in range(len(self.service_names))] for _ in range(len(self.service_names))]
           for index , row in single_trace_df.iterrows():
                service_name = row[constants.SERVICE_NAME_COLUMN]
                '''
-               ref_span_id can be N/A if and only if got provoked first, in our case the frontend-proxy server
+               ref_span_id can be N/A if and only if got provoked first
                '''
                ref_span_id = row[constants.REF_TYPE_SPAN_ID]
                print(ref_span_id)
-               ref_service_name = self._find_service_name_for_spanID(single_trace_df=single_trace_df, ref_span_id=ref_span_id)
-               #service time to insert
+               if ref_span_id != constants.NOT_AVAILABLE:
+ 
+                    ref_service_name = self._find_service_name_for_spanID(single_trace_df=single_trace_df, ref_span_id=ref_span_id)
+               else:     
+                    ref_service_name = constants.NOT_AVAILABLE
+               
                duration = row[constants.DURATION_COLUMN]
                
                # getting the corresponding index pairs for the matrix
@@ -56,6 +60,7 @@ class WeightedAdjMatrix:
                    return row[constants.SERVICE_NAME_COLUMN]
           
           # this should actually not happen and is just for completeness reasons, we will however tet on this
+          print(f"{ref_span_id} could not be found")
           return "NOT FOUND"
 
 
