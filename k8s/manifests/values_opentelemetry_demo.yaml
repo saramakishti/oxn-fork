@@ -51,6 +51,10 @@ opentelemetry-collector:
             - probabilistic_sampler
 prometheus:
   server:
+    global:
+      scrape_interval: 5s
+      scrape_timeout: 5s
+      evaluation_interval: 5s
     extraArgs:
       web.enable-lifecycle: ""
     persistentVolume:
@@ -726,3 +730,68 @@ prometheus:
               annotations:
                 summary: Prometheus timeseries cardinality (instance {{ $labels.instance }})
                 description: "The \"{{ $labels.name }}\" timeseries cardinality is getting very high: {{ $value }}\n  VALUE = {{ $value }}\n  LABELS = {{ $labels }}"
+        # Aggressive HTTP Latency Detection
+        - name: astronomy-shop-rapid-http-latency-alerts
+          rules:
+            - alert: ImmediateHighHTTPLatency
+              expr: |
+                histogram_quantile(0.95, 
+                  sum(rate(http_server_duration_milliseconds_bucket{
+                    job=~"opentelemetry-demo/.*", 
+                    http_status_code="200",
+                    le!="infinity"
+                  }[90s])) by (job, http_method, http_flavor, net_host_name, le)
+                ) > 300
+              for: 10s
+              labels:
+                severity: critical
+                detection: rapid
+                team: observability
+                runbook: latency-immediate-response
+              annotations:
+                summary: "URGENT: Rapid HTTP Latency Spike - {{ $labels.job }}"
+                description: "Immediate latency spike detected for {{ $labels.job }} (Method: {{ $labels.http_method }}, Flavor: {{ $labels.http_flavor }}). Latency exceeded 300ms within 30 seconds."
+                impact: "High risk of service degradation"
+                recommended_action: "Immediate investigation required"
+
+        # Ultra-Sensitive RPC Latency Detection
+        - name: astronomy-shop-rapid-rpc-latency-alerts
+          rules:
+            - alert: ImmediateHighRPCLatency
+              expr: |
+                histogram_quantile(0.95, 
+                  sum(rate(rpc_server_duration_milliseconds_bucket{
+                    job=~"opentelemetry-demo/.*", 
+                    rpc_grpc_status_code="0",
+                    le!="infinity"
+                  }[90s])) by (job, rpc_method, rpc_service, le)
+                ) > 300
+              for: 10s
+              labels:
+                severity: critical
+                detection: rapid
+                team: observability
+                runbook: rpc-latency-immediate-response
+              annotations:
+                summary: "URGENT: Rapid RPC Latency Spike - {{ $labels.job }}"
+                description: "Immediate internal service latency spike detected for {{ $labels.job }} (Method: {{ $labels.rpc_method }}, Service: {{ $labels.rpc_service }}). Latency exceeded 300ms within 30 seconds."
+                impact: "High risk of internal service communication breakdown"
+                recommended_action: "Immediate investigation of service interactions"
+
+        # Critical Services Specific RPC Latency
+        - name: astronomy-shop-critical-service-rpc-latency
+          rules:
+            - alert: CriticalServiceRPCLatencySpike
+              expr: |
+                histogram_quantile(0.95, sum by (job, rpc_method, rpc_service, le) (rate(rpc_server_duration_milliseconds_bucket{job=~"opentelemetry-demo/(checkoutservice|adservice|productcatalogservice)",le!="infinity",rpc_grpc_status_code="0"}[90s]))) >300
+              for: 10s
+              labels:
+                severity: critical
+                detection: rapid
+                team: platform
+                runbook: critical-service-rpc-latency
+              annotations:
+                summary: "CRITICAL: High RPC Latency in Mission-Critical Service"
+                description: "Rapid latency spike in critical service {{ $labels.job }} (Method: {{ $labels.rpc_method }}). Latency exceeded 200ms within 30 seconds."
+                impact: "Potential disruption of core business operations"
+                recommended_action: "Immediate service investigation and potential rollback"
