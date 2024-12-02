@@ -1,6 +1,9 @@
 #!/bin/bash
 set -e
 
+# Load the configuration file to get the CLUSTER_NAME
+source config/.cluster-config.sh
+
 # Check if kubectl is available
 if ! command -v kubectl &> /dev/null; then
     echo "kubectl is not installed"
@@ -17,7 +20,6 @@ fi
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 MANIFESTS_DIR="${SCRIPT_DIR}/../manifests"
 DASHBOARDS_DIR="${SCRIPT_DIR}/../dashboards"
-CLUSTER_NAME="oxn.dev.com" 
 
 # Verify directories exist
 if [ ! -d "$MANIFESTS_DIR" ]; then

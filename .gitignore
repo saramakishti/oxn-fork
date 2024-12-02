@@ -35,3 +35,6 @@ terraform.tfstate.backup
 
 # logs
 *.log
+
+# Cluster configuration
+config/.cluster-prefix
