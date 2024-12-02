@@ -2,6 +2,8 @@
 
 set -e
 
+# Load the configuration file to get the CLUSTER_NAME
+source config/.cluster-config.sh
 
 if [ -z "$1" ]; then
     echo "Error: GCP project ID missing"
@@ -10,7 +12,6 @@ if [ -z "$1" ]; then
 fi
 
 PROJECT_ID="$1"
-CLUSTER_NAME="oxn.dev.com"
 
 # Set environment variable for kOps state store
 export KOPS_STATE_STORE="gs://$(terraform output -raw kops_state_store_bucket_name)"

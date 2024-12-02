@@ -1,7 +1,9 @@
 #!/bin/bash
 
-
 set -e
+
+# Load the configuration file to get the CLUSTER_NAME
+source "config/.cluster-config.sh"
 
 # parameters
 if [ $# -ne 1 ]; then
@@ -10,13 +12,14 @@ if [ $# -ne 1 ]; then
     exit 1
 fi
 
-# Configuration variables
-CLUSTER_NAME="oxn.dev.com"          # If you want to change the cluster name, you need to update the  variable in down-cluster.sh and install-oxn.sh
 GCP_PROJECT_ID=$1                   # GCP project ID
 ZONE="europe-west1-b"               # Single zone since HA is not needed
 NODE_COUNT=3
 CONTROL_PLANE_SIZE="e2-standard-2"  
 NODE_SIZE="e2-standard-2"       
+
+# Debug output to verify cluster name
+echo "Using cluster name: ${CLUSTER_NAME}"
 
 # create GCS bucket
 terraform apply -var="project_id=${GCP_PROJECT_ID}" -auto-approve
@@ -37,8 +40,7 @@ kops create cluster \
     --control-plane-count=1 \
     --networking=cilium \
     --cloud=gce \
-    --project="${PROJECT_ID}" \
-
+    --project="${GCP_PROJECT_ID}" \
 
 # Get the instance group specs
 echo "Modifying instance groups to use spot instances..."
