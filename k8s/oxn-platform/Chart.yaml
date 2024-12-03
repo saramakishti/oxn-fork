@@ -5,12 +5,13 @@ type: application
 version: 1.0.0
 
 dependencies:
-  - name: frontend
+  - name: frontend-chart
     version: "latest"
-    repository: "file://../frontend-chart"
+    appVersion: 0.0.1
+    repository: "file://./charts/frontend-chart"
 #  - name: backend
 #    version: 1.0.0
-#    repository: "file://../backend-chart"
+#    repository: "file://./charts/backend-chart"
 #  - name: analysis
 #    version: 1.0.0
-#    repository: "file://../analysis-chart"#
+#    repository: "file://./charts/analysis-chart"
