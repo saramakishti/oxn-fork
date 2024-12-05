@@ -30,4 +30,4 @@ jobs:
       run: docker buildx build --platform linux/amd64,linux/arm64 -t morauen/oxn-frontend:latest .
 
     - name: Push Docker image
-      run: docker push morauen/oxn-frontend:latest
+      run: echo docker images | docker push morauen/oxn-frontend:latest
