@@ -1,0 +1,4 @@
+replicas: 1
+image:
+  repository: morauen/oxn-frontend
+  tag: latest

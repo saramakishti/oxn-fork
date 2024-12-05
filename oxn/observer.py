@@ -5,7 +5,7 @@ Connection: Works with responses.py to monitor and collect experiment results.
 
 Module to handle data capture during experiment execution"""
 import logging
-from typing import Optional
+from typing import Dict, List, Optional
 from operator import attrgetter
 
 from .models.orchestrator import Orchestrator
@@ -24,90 +24,71 @@ class Observer:
     an experiment description and then observing the variables during or after an experiment.
     """
 
-    def __init__(
-        self,
-        orchestrator: Orchestrator,
-        config: Optional[dict],
-        experiment_start: Optional[float] = None,
-        experiment_end: Optional[float] = None,
-    ):
-        assert orchestrator is not None
-        self.orchestrator = orchestrator
-        """The orchestrator instance"""
+    def __init__(self, config: dict, orchestrator):
         self.config = config
-        """The experiment specification"""
-        self.experiment_start = experiment_start
-        """The experiment start timestamp """
-        self.experiment_end = experiment_end
-        """The experiment end timestamp"""
-        self._response_variables: dict = {}
-        """The response variables constructed from the specification and experiment start / end timestamps"""
-
-    def _initialize_metric_variable(self, response_name, response_description) -> None:
-        response_variable = MetricResponseVariable(
-            orchestrator=self.orchestrator,
-            name=response_name,
-            description=response_description,
-            experiment_start=self.experiment_start,
-            experiment_end=self.experiment_end,
-            target=response_description["target"],
-        )
-        self._response_variables[response_variable.name] = response_variable
-
-    def _initialize_trace_variable(self, response_name, response_description) -> None:
-        """Initialize a trace variable from a response description"""
-        response_variable = TraceResponseVariable(
-            orchestrator=self.orchestrator,
-            name=response_name,
-            description=response_description,
-            experiment_start=self.experiment_start,
-            experiment_end=self.experiment_end,
-        )
-        self._response_variables[response_variable.name] = response_variable
+        self.orchestrator = orchestrator
+        self.experiment_start: Optional[float] = None
+        self.experiment_end: Optional[float] = None
+        self._response_variables: Dict[str, ResponseVariable] = {}
 
     def initialize_variables(self) -> None:
-        """
-        Process the response variable section from the specification config
+        """Initialize response variables from the experiment specification"""
+        if not self.config or not self.experiment_start or not self.experiment_end:
+            return
 
-        Note that we cannot initialize this straightaway when reading the experiment specification,
-        as the observational windows depend on experiment start and end times.
-        """
         responses = self.config["experiment"]["responses"]
         for response in responses:
-            for response_name, response_params in response.items():
-                response_type = response_params["type"]
-                if response_type == "trace":
-                    self._initialize_trace_variable(
-                        response_name=response_name,
-                        response_description=response_params,
-                    )
-                if response_type == "metric":
-                    self._initialize_metric_variable(
-                        response_name=response_name,
-                        response_description=response_params,
-                    )
+            response_type = response["type"]
+            name = response["name"]
 
-    def variables(self) -> dict[str, ResponseVariable]:
+            if response_type == "metric":
+                response_variable = MetricResponseVariable(
+                    orchestrator=self.orchestrator,
+                    name=name,
+                    experiment_start=self.experiment_start,
+                    experiment_end=self.experiment_end,
+                    description=response,
+                    target=response["target"],
+                    right_window=response["right_window"],
+                    left_window=response["left_window"],
+                )
+                self._response_variables[name] = response_variable
+            
+            elif response_type == "trace":
+                response_variable = TraceResponseVariable(
+                    orchestrator=self.orchestrator,
+                    name=name,
+                    experiment_start=self.experiment_start,
+                    experiment_end=self.experiment_end,
+                    description=response,
+                    right_window=response["right_window"],
+                    left_window=response["left_window"],
+                )
+                self._response_variables[name] = response_variable
+
+    def variables(self) -> Dict[str, ResponseVariable]:
+        """Return all response variables"""
         return self._response_variables
 
     def time_to_wait_right(self) -> float:
-        """Determine the time to wait before observing the variables"""
-        max_right_window = max(self.variables().values(), key=attrgetter("end"))
-        diff = max_right_window.end - self.experiment_end
-        return diff
+        """Return the maximum right window time to wait"""
+        max_time = 0
+        for response in self.variables().values():
+            # If we ever implement a response variable that does not have a right window, this will break
+            in_seconds = time_string_to_seconds(response.right_window)
+            if in_seconds > max_time:
+                max_time = in_seconds
+        return max_time
 
-    def time_to_wait_left(self):
-        """
-        Determine the time to wait on the left side of an experiment start
-        """
-        responses = self.config["experiment"]["responses"]
-        max_left_window = 0
-        for response in responses:
-            for response_name, response_params in response.items():
-                in_seconds = time_string_to_seconds(response_params["left_window"])
-                if in_seconds > max_left_window:
-                    max_left_window = in_seconds
-        return max_left_window
+    def time_to_wait_left(self) -> float:
+        """Return the maximum left window time to wait"""
+        max_time = 0
+        for response in self.variables().values():
+            # If we ever implement a response variable that does not have a left window, this will break
+            in_seconds = time_string_to_seconds(response.left_window)
+            if in_seconds > max_time:
+                max_time = in_seconds
+        return max_time
 
     def get_metric_variables(self) -> list[MetricResponseVariable]:
         """Return the metric variables of this observer"""

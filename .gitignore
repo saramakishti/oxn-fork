@@ -24,3 +24,17 @@ evaluation.py
 *.h5
 *.pickle
 kubevpn.exe
+
+venv
+
+# terraform
+terraform.tfstate
+terraform.tfstate.backup
+.terraform.lock.hcl
+.terraform
+
+# logs
+*.log
+
+# Cluster configuration
+config/.cluster-prefix

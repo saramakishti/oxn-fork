@@ -18,6 +18,17 @@ def validate_file(file):
     return file
 
 
+def validate_output_formats(formats):
+    valid_formats = {'hdf', 'json'}
+    formats = set(formats.split(','))
+    invalid = formats - valid_formats
+    if invalid:
+        raise argparse.ArgumentTypeError(
+            f"Invalid output format(s): {', '.join(invalid)}. Valid formats are: {', '.join(valid_formats)}"
+        )
+    return formats
+
+
 parser = argparse.ArgumentParser(
     prog="oxn",
     description="Observability experiments engine",
@@ -78,6 +89,21 @@ parser.add_argument(
     default="1m",
     help="Timeout after which we stop trying to build the SUE. Default is 1m",
     type=time_string_to_seconds
+)
+
+parser.add_argument(
+    "--out-path",
+    dest="out_path",
+    type=str,
+    help="Directory path where experiment data should be stored. If not specified, data will be stored in the default location.",
+)
+
+parser.add_argument(
+    "--out",
+    dest="out_formats",
+    type=validate_output_formats,
+    default={'hdf'},
+    help="Comma-separated (no spaces) list of output formats. Valid formats are: hdf, json. Default is hdf",
 )
 
 
