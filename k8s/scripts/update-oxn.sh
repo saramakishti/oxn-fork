@@ -9,6 +9,7 @@ echo "Updating OXN source code on control plane node..."
 # Create temp zip file
 echo "Creating zip archive of source code..."
 rm -f /tmp/oxn-source.zip
+# Exclude virtualenv and terraform files
 (cd "${OXN_SOURCE_DIR}" && zip -r /tmp/oxn-source.zip ./* -x "k8s/scripts/.terraform/*" -x "venv/*")
 
 # Copy zip file and extract on remote
@@ -27,7 +28,6 @@ gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
     rm /tmp/oxn-source.zip
     
     # Install OXN in virtualenv
-    source venv/bin/activate
     pip3 install .
     
     # Verify installation

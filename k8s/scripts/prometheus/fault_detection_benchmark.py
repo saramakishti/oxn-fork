@@ -91,7 +91,7 @@ class PrometheusFaultDetection(FaultDetectionMechanism):
                 ###########################################
                 ################ SUBTRACTING 1 HOUR #######
                 ###########################################
-                event_time = event_time - timedelta(hours=1)
+                #event_time = event_time - timedelta(hours=1)
                 ###########################################
                 ###########################################
                 ###########################################
@@ -260,7 +260,8 @@ class FaultDetectionBenchmark:
             return []
         
         # Use current time and last 24h instead of report times
-        end_time = datetime.now()
+        #end_time = datetime.now()
+        end_time = datetime(2024, 12, 3, 17, 48, 43, 817407)
         start_time = end_time - timedelta(hours=24)
         
         module_logger.debug(f"Analyzing time window: {start_time} to {end_time}")

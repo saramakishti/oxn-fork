@@ -185,7 +185,7 @@ experiment:
       ] # {namespace: monitoring, name: not-running-service}
     #required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}]
   loadgen:
-    run_time: 10m
+    run_time: 6m
     max_users: 600
     spawn_rate: 50
     locust_files:

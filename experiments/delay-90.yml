@@ -170,9 +170,9 @@ experiment:
             label_selector: app.kubernetes.io/name,
             label: astronomy-shop-recommendationservice,
             #service_name: node-exporter,
-            delay_time: 120ms,
+            delay_time: 90ms,
             delay_jitter: 90ms,
-            duration: 6m,
+            duration: 2m,
             interface: eth0,
           }
   sue:
@@ -186,7 +186,7 @@ experiment:
       ] # {namespace: monitoring, name: not-running-service}
     #required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}]
   loadgen:
-    run_time: 10m
+    run_time: 5m
     max_users: 500
     spawn_rate: 50
     locust_files:

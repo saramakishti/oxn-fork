@@ -37,3 +37,6 @@ terraform.tfstate.backup
 
 # Cluster configuration
 config/.cluster-prefix
+
+# cursor
+.cursorrules

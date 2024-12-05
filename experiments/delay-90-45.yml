@@ -1,0 +1,198 @@
+# yaml-language-server: $schema=experiment_schema.json
+experiment:
+  name: "latest"
+  version: 0.0.1
+  orchestrator: kubernetes
+  services:
+    jaeger:
+      name: astronomy-shop-jaeger-query
+      namespace: system-under-evaluation
+    prometheus:
+      [
+        {
+          name: astronomy-shop-prometheus-server,
+          namespace: system-under-evaluation,
+          target: sue,
+        },
+        {
+          name: kube-prometheus-kube-prome-prometheus,
+          namespace: oxn-external-monitoring,
+          target: oxn,
+        },
+      ]
+  responses:
+    - name: frontend_traces
+      type: trace
+      service_name: frontend
+      left_window: 10s
+      right_window: 10s
+      limit: 1
+    - name: system_CPU
+      type: metric
+      metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation"}[1m]))
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: oxn
+    - name: recommendation_deployment_CPU
+      type: metric
+      metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation", pod=~"astronomy-shop-recommendationservice.*"}[90s])) by (pod)
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: oxn
+    - name: frontend_http_latency
+      type: metric
+      metric_name: histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job="opentelemetry-demo/frontend"}[90s])) by (http_method, http_status_code, le))
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: cart_service_latency
+      type: metric
+      metric_name: histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{job="opentelemetry-demo/cartservice"}[90s])) by (http_route, le)) * 1000
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: product_catalog_latency
+      type: metric
+      metric_name: histogram_quantile(0.95, sum(rate(rpc_server_duration_milliseconds_bucket{job="opentelemetry-demo/productcatalogservice"}[90s])) by (rpc_method, le))
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: pod_status
+      type: metric
+      metric_name: sum by (phase) (kube_pod_status_phase{namespace="system-under-evaluation"})
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: pod_restarts
+      type: metric
+      metric_name: sum(kube_pod_container_status_restarts_total{namespace="system-under-evaluation"})
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: terminated_pods
+      type: metric
+      metric_name: sum(kube_pod_container_status_terminated{namespace="system-under-evaluation"})
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: failed_spans
+      type: metric
+      metric_name: sum(rate(otelcol_exporter_send_failed_spans[1m]))
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: network_bytes
+      type: metric
+      metric_name: sum(rate(node_network_receive_bytes_total[1m]) + rate(node_network_transmit_bytes_total[1m])) by (instance)
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: network_drops
+      type: metric
+      metric_name: sum(rate(node_network_receive_drop_total[1m]) + rate(node_network_transmit_drop_total[1m])) by (instance)
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: network_errors
+      type: metric
+      metric_name: sum(rate(node_network_receive_errs_total[1m]) + rate(node_network_transmit_errs_total[1m])) by (instance)
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: tcp_retransmissions
+      type: metric
+      metric_name: sum(rate(node_netstat_Tcp_RetransSegs[1m])) by (instance)
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: tcp_udp_errors
+      type: metric
+      metric_name: sum(rate(node_netstat_Tcp_InErrs[1m]) + rate(node_netstat_Udp_InErrors[1m])) by (instance)
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: node_load
+      type: metric
+      metric_name: node_load1
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: memory_available
+      type: metric
+      metric_name: node_memory_MemAvailable_bytes
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: cpu_usage
+      type: metric
+      metric_name: sum(rate(node_cpu_seconds_total{mode!="idle"}[1m])) by (instance)
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+    - name: tcp_connections
+      type: metric
+      metric_name: node_netstat_Tcp_CurrEstab
+      left_window: 10s
+      right_window: 10s
+      step: 1
+      target: sue
+  treatments:
+    - add_security_context:
+        action: security_context_kubernetes
+        params:
+          {
+            namespace: system-under-evaluation,
+            label_selector: app.kubernetes.io/component,
+            label: recommendationservice,
+            capabilities: { add: ["NET_ADMIN"] },
+          }
+    - delay_treatment:
+        action: delay
+        params: {
+            namespace: system-under-evaluation,
+            label_selector: app.kubernetes.io/name,
+            label: astronomy-shop-recommendationservice,
+            #service_name: node-exporter,
+            delay_time: 90ms,
+            delay_jitter: 45ms,
+            duration: 2m,
+            interface: eth0,
+          }
+  sue:
+    compose: opentelemetry-demo/docker-compose.yml
+    exclude: [loadgenerator]
+    required: [
+        {
+          namespace: system-under-evaluation,
+          name: astronomy-shop-prometheus-server,
+        },
+      ] # {namespace: monitoring, name: not-running-service}
+    #required: [{namespace: monitoring, name: grafana}, {namespace: monitoring, name: node-exporter}]
+  loadgen:
+    run_time: 5m
+    max_users: 500
+    spawn_rate: 50
+    locust_files:
+      - "/opt/oxn/locust/locust_basic_interaction.py"
+      - "/opt/oxn/locust/locust_otel_demo.py"
+    target:
+      name: astronomy-shop-frontendproxy
+      namespace: system-under-evaluation
+      port: 8080
