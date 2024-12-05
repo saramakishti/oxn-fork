@@ -1,4 +1,3 @@
-
 import importlib
 from importlib.machinery import ModuleSpec
 import importlib.util
@@ -68,7 +67,8 @@ class LocustFileLoadgenerator:
         self.env.create_local_runner()
         
         for locust_file in self.locust_files:
-            path = locust_file["path"]
+            path = locust_file["path"] if isinstance(locust_file, dict) else locust_file
+            
             locust_module = self._load_locust_file(path)
             for user_class in dir(locust_module):
                 user_class_instance = getattr(locust_module, user_class)

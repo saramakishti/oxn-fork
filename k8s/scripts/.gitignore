@@ -1,0 +1,4 @@
+*.log
+*.config
+ig_specs.yaml
+*.hdf5

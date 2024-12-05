@@ -177,8 +177,8 @@ experiment:
     max_users: 500
     spawn_rate: 10
     locust_files: [
-      { path: locust/locust_basic_interaction.py },
-      { path: locust/locust_otel_demo.py },
+      { path: /opt/oxn/locust/locust_basic_interaction.py },
+      { path: /opt/oxn/locust/locust_otel_demo.py },
       ]
     target:
       name: astronomy-shop-frontendproxy

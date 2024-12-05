@@ -27,6 +27,8 @@ def main():
         configuration_path=args.spec,
         report_path=args.report,
         treatment_file=args.extend,
+        out_path=args.out_path,
+        out_formats=args.out_formats,
     )
     try:
         engine.read_experiment_specification()
