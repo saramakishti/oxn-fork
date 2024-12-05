@@ -15,6 +15,9 @@ from .errors import PrometheusException, JaegerException
 from .models.response import ResponseVariable
 from .jaeger import Jaeger
 from .prometheus import Prometheus
+import logging
+
+logger = logging.getLogger(__name__)
 
 
 class MetricResponseVariable(ResponseVariable):
@@ -309,6 +312,11 @@ class TraceResponseVariable(ResponseVariable):
             "end_time",
             "duration",
             "service_name",
+            "span_kind",
+            "req_status_code",
+            "ref_type",
+            "ref_type_span_ID",
+            "ref_type_trace_ID"
         ]
         dataframes = []
 
@@ -326,7 +334,31 @@ class TraceResponseVariable(ResponseVariable):
                 process_id = span["processID"]
                 process_dict = processes.get(process_id)
                 service_name = process_dict["serviceName"]
-                row = [trace_id, span_id, operation, start, end, duration, service_name]
+
+                # adding the span kind : internal / client / service / consumer / producer
+                # adding the status code of rRPC / http request or -1 if spankind == interna
+                req_status_code = "N/A"
+                span_kind = "N/A"
+                if "tags" in span and isinstance(span["tags"], list):
+                    for obj in span["tags"]:
+                        if obj["key"] == "span.kind":
+                            span_kind = obj["value"]
+                        if obj["key"] == "rpc.grpc.status_code":
+                            req_status_code = obj["value"]
+                            # here add http status code option
+                            # since the application talks in gRPC and the Frontend and Frontend Proxy with with HTTP
+                        if obj["key"] == "http.status_code":
+                            req_status_code = obj["value"]
+                ref_type = "N/A"
+                ref_type_spanID = "N/A"
+                ref_type_traceID = "N/A"
+                if span["references"]:
+                    ref_type = span["references"][0]["refType"]
+                    ref_type_spanID = span["references"][0]["spanID"]
+                    ref_type_traceID = span["references"][0]["traceID"]
+                # adding the reftype per span "CHILD_of" / "follows_from"
+                # adding the spankind span ID and the spankind trace
+                row = [trace_id, span_id, operation, start, end, duration, service_name, span_kind, req_status_code, ref_type, ref_type_spanID, ref_type_traceID]
                 trace_rows.append(row)
             dataframe = pd.DataFrame(trace_rows, columns=columns)
             dataframe["duration"] = pd.to_numeric(dataframe["duration"])
