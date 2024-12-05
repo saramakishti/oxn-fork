@@ -1,0 +1,17 @@
+apiVersion: v2
+name: oxn-platform
+description: Umbrella chart for OXN platform
+type: application
+version: 1.0.0
+
+dependencies:
+  - name: frontend-chart
+    version: "latest"
+    appVersion: 0.0.1
+    repository: "file://./charts/frontend-chart"
+#  - name: backend
+#    version: 1.0.0
+#    repository: "file://./charts/backend-chart"
+#  - name: analysis
+#    version: 1.0.0
+#    repository: "file://./charts/analysis-chart"

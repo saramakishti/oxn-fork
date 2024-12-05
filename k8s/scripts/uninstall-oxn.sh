@@ -18,6 +18,11 @@ helm uninstall kube-prometheus --namespace oxn-external-monitoring
 echo "Uninstalling OpenEBS..."
 kubectl delete -f https://openebs.github.io/charts/openebs-operator.yaml --ignore-not-found
 
+# Uninstall OXN Platform
+echo "Uninstalling OXN Platform..."
+helm uninstall oxn-platform --namespace oxn
+kubectl delete namespace oxn --ignore-not-found
+
 # Clean up Helm repos
 echo "Removing Helm repositories..."
 helm repo remove prometheus-community

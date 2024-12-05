@@ -117,7 +117,7 @@ gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
     python3 -m virtualenv venv
     
     # Extract OXN source
-    unzip -q /tmp/oxn-source.zip
+    unzip -o -q /tmp/oxn-source.zip
     rm /tmp/oxn-source.zip
     
     # Install OXN in virtualenv
@@ -134,4 +134,16 @@ rm -f /tmp/oxn-source.zip
 echo "Installation complete!"
 echo "To run an experiment: ./run-experiment.sh <experiment-yaml-file> [additional oxn arguments]"
 echo "To extract results: ./extract-results.sh <remote-results-path> <local-destination-dir>"
+
+echo "Installing OXN Platform..."
+kubectl create namespace oxn --dry-run=client -o yaml | kubectl apply -f -
+helm install oxn-platform ../oxn-platform \
+    --namespace oxn \
+    --create-namespace
+
+echo "Waiting for OXN Platform pods to be ready..."
+kubectl wait --for=condition=ready pod \
+    --all \
+    -n oxn \
+    --timeout=300s
     

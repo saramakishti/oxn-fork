@@ -1,7 +1,6 @@
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar"
 import { AppSidebar } from "./app-sidebar"
 import { ThemeToggle } from "./dark-mode-toggle"
-import { useState } from "react"
 export default function Layout({ children }: { children: React.ReactNode }) {
 
   return (

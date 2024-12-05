@@ -2,7 +2,6 @@ import type { Metadata } from "next";
 import { ThemeProvider } from "@/context/theme-provider";
 import "@/styles/globals.css"
 import Layout from "@/components/layout";
-import { useState } from "react";
 
 export const metadata: Metadata = {
   title: "OXN++ Dashboard",
