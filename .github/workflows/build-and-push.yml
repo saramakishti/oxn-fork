@@ -1,7 +1,5 @@
 name: Build and Push Docker Image
 
-name: Build and Push Docker Image to Docker Hub
-
 on: push
 jobs:
   push_to_registry:
