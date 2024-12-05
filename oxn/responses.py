@@ -369,8 +369,6 @@ class TraceResponseVariable(ResponseVariable):
             dataframes.append(dataframe)
         try:
             merged = pd.concat(dataframes)
-            # for debugging reasons for now
-            logger.info(merged.head(20))
         except ValueError:
             raise JaegerException(
                 message="Cannot concatenate dataframes",
