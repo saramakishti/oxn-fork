@@ -154,9 +154,27 @@ experiment:
       step: 1
       target: sue
   treatments:
-    - empty_treatment:
-        action: empty
-        params: { duration: 1m }
+    - prometheus_rules:
+        action: kubernetes_prometheus_rules
+        params:
+          latency_threshold: 300
+          evaluation_window: "30s"
+    - kubernetes_prometheus_interval:
+        action: kubernetes_prometheus_interval
+        params: { interval: 5s, evaluation_interval: 5s, scrape_timeout: 3s }
+
+    - delay_treatment:
+        action: delay
+        params: {
+            namespace: system-under-evaluation,
+            label_selector: app.kubernetes.io/name,
+            label: astronomy-shop-recommendationservice,
+            #service_name: node-exporter,
+            delay_time: 90ms,
+            delay_jitter: 90ms,
+            duration: 2m,
+            interface: eth0,
+          }
   sue:
     compose: opentelemetry-demo/docker-compose.yml
     exclude: [loadgenerator]
@@ -168,7 +186,7 @@ experiment:
         },
       ]
   loadgen:
-    run_time: 2m
+    run_time: 3m
     max_users: 10
     spawn_rate: 5
     locust_files:

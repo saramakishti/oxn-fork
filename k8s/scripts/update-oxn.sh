@@ -27,6 +27,10 @@ gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
     unzip -q /tmp/oxn-source.zip
     rm /tmp/oxn-source.zip
     
+    # Create new virtualenv
+    python3 -m venv venv
+    source venv/bin/activate
+    
     # Install OXN in virtualenv
     pip3 install .
     

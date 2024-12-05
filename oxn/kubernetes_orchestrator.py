@@ -637,6 +637,114 @@ class KubernetesOrchestrator(Orchestrator):
 
         return scrape_interval, evaluation_interval, scrape_timeout
     
+    def get_prometheus_alert_rules(self) -> dict:
+        """
+        Get current alert rules configuration from the Prometheus ConfigMap
+        
+        Returns:
+            The alert rules configuration as a dictionary
+        """
+        try:
+            configmap = self.kube_client.read_namespaced_config_map(name="astronomy-shop-prometheus-server", namespace="system-under-evaluation")
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while reading ConfigMap astronomy-shop-prometheus-server in namespace system-under-evaluation: {e.body}",
+                explanation=str(e),
+            )
+            
+        assert configmap is not None
+        assert isinstance(configmap, client.V1ConfigMap)
+        assert configmap.data is not None
+        
+        alert_rules_yaml = configmap.data.get('alerting_rules.yml')
+
+        if not alert_rules_yaml:
+            raise OrchestratorException(
+                message="alerting_rules.yml not found in ConfigMap",
+                explanation="alerting_rules.yml not found in ConfigMap",
+            )
+
+        alert_rules = yaml.safe_load(alert_rules_yaml)
+        return alert_rules
+
+    def configure_prometheus_alert_rules(self, latency_threshold: int, evaluation_window: str):
+        """
+        Update alert rules configuration in the Prometheus ConfigMap
+        
+        Args:
+            latency_threshold: The latency threshold in milliseconds to trigger alerts
+            evaluation_window: The time window to evaluate metrics over
+        """
+        try:
+            configmap = self.kube_client.read_namespaced_config_map(name="astronomy-shop-prometheus-server", namespace="system-under-evaluation")
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while reading ConfigMap astronomy-shop-prometheus-server in namespace system-under-evaluation: {e.body}",
+                explanation=str(e),
+            )
+            
+        assert configmap is not None
+        assert isinstance(configmap, client.V1ConfigMap)
+        assert configmap.data is not None
+
+        alert_rules = {
+            'groups': [
+                {
+                    'name': 'astronomy-shop-rapid-http-latency-alerts',
+                    'rules': [{
+                        'alert': 'ImmediateHighHTTPLatency',
+                        'expr': f'histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/.*", http_status_code="200", le!="infinity"}}[{evaluation_window}])) by (job, http_method, http_flavor, net_host_name, le)) > {latency_threshold}',
+                        'for': '10s',
+                        'labels': {
+                            'detection': 'rapid',
+                            'runbook': 'latency-immediate-response',
+                            'severity': 'critical',
+                            'team': 'observability'
+                        }
+                    }]
+                },
+                {
+                    'name': 'astronomy-shop-rapid-rpc-latency-alerts',
+                    'rules': [{
+                        'alert': 'ImmediateHighRPCLatency',
+                        'expr': f'histogram_quantile(0.95, sum(rate(rpc_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/.*", rpc_grpc_status_code="0", le!="infinity"}}[{evaluation_window}])) by (job, rpc_method, rpc_service, le)) > {latency_threshold}',
+                        'for': '10s',
+                        'labels': {
+                            'detection': 'rapid',
+                            'runbook': 'rpc-latency-immediate-response',
+                            'severity': 'critical',
+                            'team': 'observability'
+                        }
+                    }]
+                },
+                {
+                    'name': 'astronomy-shop-critical-service-rpc-latency',
+                    'rules': [{
+                        'alert': 'CriticalServiceRPCLatencySpike',
+                        'expr': f'histogram_quantile(0.95, sum by (job, rpc_method, rpc_service, le) (rate(rpc_server_duration_milliseconds_bucket{{job=~"opentelemetry-demo/(checkoutservice|adservice|productcatalogservice)",le!="infinity",rpc_grpc_status_code="0"}}[{evaluation_window}]))) > {latency_threshold}',
+                        'for': '10s',
+                        'labels': {
+                            'detection': 'rapid',
+                            'runbook': 'critical-service-rpc-latency',
+                            'severity': 'critical',
+                            'team': 'platform'
+                        }
+                    }]
+                }
+            ]
+        }
+
+        configmap.data['alerting_rules.yml'] = yaml.dump(alert_rules, default_flow_style=False)
+        
+        try:
+            self.kube_client.patch_namespaced_config_map(name="astronomy-shop-prometheus-server", namespace="system-under-evaluation", body=configmap)
+            logging.info("ConfigMap astronomy-shop-prometheus-server alert rules updated successfully.")
+        except ApiException as e:
+            raise OrchestratorException(
+                message=f"Error while updating ConfigMap astronomy-shop-prometheus-server in namespace system-under-evaluation: {e.body}",
+                explanation=str(e),
+            )
+
     def get_otel_collector_probabilistic_sampling_values(self) -> Tuple[str, str]:
         """
         Get the OpenTelemetry Collector probabilistic sampling values

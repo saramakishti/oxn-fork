@@ -42,6 +42,7 @@ kops create cluster \
     --cloud=gce \
     --project="${GCP_PROJECT_ID}" \
 
+
 # Get the instance group specs
 echo "Modifying instance groups to use spot instances..."
 kops get ig --name "${CLUSTER_NAME}" -o yaml > ig_specs.yaml

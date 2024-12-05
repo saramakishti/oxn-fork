@@ -2101,6 +2101,70 @@ class KubernetesPrometheusIntervalTreatment(Treatment):
     def is_runtime(self) -> bool:
         return False
 
+class KubernetesPrometheusRulesTreatment(Treatment):
+    """Treatment to configure Prometheus alert rules."""
+    
+    def preconditions(self) -> bool:
+        return True
+
+    def inject(self) -> None:
+        assert self.config.get("latency_threshold")
+        assert self.config.get("evaluation_window")
+        assert isinstance(self.orchestrator, KubernetesOrchestrator)
+        
+        self.deployment = self.orchestrator.get_deployment(
+            "system-under-evaluation", 
+            "app.kubernetes.io/name", 
+            "prometheus"
+        )
+        
+        # Store initial values for cleanup
+        self.initial_rules = self.orchestrator.get_prometheus_alert_rules()
+        
+        # Apply new rules
+        self.orchestrator.configure_prometheus_alert_rules(
+            latency_threshold=self.config.get("latency_threshold"),
+            evaluation_window=self.config.get("evaluation_window")
+        )
+        
+        # Restart to apply changes
+        self.orchestrator.restart_pods_of_deployment(self.deployment)
+
+    def clean(self) -> None:
+        # Similar to PrometheusIntervalTreatment, might want to skip cleanup
+        # to preserve metrics during benchmark
+        pass
+
+    def _transform_params(self) -> None:
+        pass
+
+    def _validate_orchestrator(self) -> bool:
+        return super()._validate_orchestrator(["kubernetes"])
+    
+    def params(self) -> dict:
+        return {
+            "latency_threshold": int,
+            "evaluation_window": str
+        }
+
+    def _validate_params(self) -> bool:
+        for key, val in self.params().items():
+            if key not in self.config:
+                self.messages.append(
+                    f"Required parameter {key} missing for {self.treatment_type}"
+                )
+            elif not isinstance(self.config[key], val):
+                self.messages.append(
+                    f"Parameter {key} has to be of type {val} for {self.treatment_type}"
+                )
+        return not self.messages
+    
+    @property
+    def action(self):
+        return "rule_configuration"
+
+    def is_runtime(self) -> bool:
+        return False
 
 class StressTreatment(Treatment):
     """
