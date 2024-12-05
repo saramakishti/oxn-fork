@@ -26,7 +26,15 @@ This is just for developing and keeping track of decisions we make throughout th
      
      For right now these are the the microservices that are also provoked from Locust.... andd the tasks defined in the experiment.
 
-     ==> we need to define very good experiments for the distributed tracing Algorithm adn especially locust tasks.
+     ==> we need to define very good experiments for the distributed tracing Algorithm and especially locust tasks.
+
+
+# Creating a service account for local dev with the cloud storage
+
+
+     
+
+
 
 
           

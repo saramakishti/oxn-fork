@@ -1,0 +1,4 @@
+*.json
+*tfstate
+.terraform
+providers
