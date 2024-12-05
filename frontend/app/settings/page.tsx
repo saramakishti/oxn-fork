@@ -1,8 +1,7 @@
-export default function SettingsPage() {
+import ComingSoon from "@/components/coming-soon";
 
+export default function SettingsPage() {
   return (
-    <div>
-      Global settings page...
-    </div>
+    <ComingSoon />
   )
 }

@@ -1,8 +1,7 @@
-export default function SearchPage() {
+import ComingSoon from "@/components/coming-soon";
 
+export default function SearchPage() {
   return (
-    <div>
-      Global search page...
-    </div>
+    <ComingSoon />
   )
 }
