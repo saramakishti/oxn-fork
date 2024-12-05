@@ -11,3 +11,5 @@ STORAGE_NAME = "store.h5"
 TRIE_NAME = "trie.pickle"
 SCHEMA_PATH = os.path.join(os.path.dirname(__file__), 'schemas', 'experiment_schema.json')
 STORAGE_DIR = os.path.join(os.path.dirname(__file__), 'data')
+SUPERVISED_COLUMN = "Treatment_happened"
+TREATMENT_COLUMN = "Treatment_type"

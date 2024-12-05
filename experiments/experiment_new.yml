@@ -27,157 +27,93 @@ experiment:
       left_window: 10s
       right_window: 10s
       limit: 1
-    - name: system_CPU
-      type: metric
-      metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation"}[1m]))
+    - name: recommendation_traces
+      type: trace
+      service_name: recommendationservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: oxn
-    - name: recommendation_deployment_CPU
-      type: metric
-      metric_name: sum(rate(container_cpu_usage_seconds_total{namespace="system-under-evaluation", pod=~"astronomy-shop-recommendationservice.*"}[90s])) by (pod)
+      limit: 1
+    - name: frontend_proxy_traces
+      type: trace
+      service_name: frontend-proxy
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: oxn
-    - name: frontend_http_latency
-      type: metric
-      metric_name: histogram_quantile(0.95, sum(rate(http_server_duration_milliseconds_bucket{job="opentelemetry-demo/frontend"}[90s])) by (http_method, http_status_code, le))
+      limit: 1
+    - name: featureflagservice_traces
+      type: trace
+      service_name: featureflagservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: cart_service_latency
-      type: metric
-      metric_name: histogram_quantile(0.95, sum(rate(http_server_request_duration_seconds_bucket{job="opentelemetry-demo/cartservice"}[90s])) by (http_route, le)) * 1000
+      limit: 1
+    - name: accountingservice_traces
+      type: trace
+      service_name: accountingservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: product_catalog_latency
-      type: metric
-      metric_name: histogram_quantile(0.95, sum(rate(rpc_server_duration_milliseconds_bucket{job="opentelemetry-demo/productcatalogservice"}[90s])) by (rpc_method, le))
+      limit: 1
+    - name: adservice_traces
+      type: trace
+      service_name: adservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: pod_status
-      type: metric
-      metric_name: sum by (phase) (kube_pod_status_phase{namespace="system-under-evaluation"})
+      limit: 1
+    - name: checkoutservice_traces
+      type: trace
+      service_name: checkoutservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: pod_restarts
-      type: metric
-      metric_name: sum(kube_pod_container_status_restarts_total{namespace="system-under-evaluation"})
+      limit: 1
+    - name: currencyservice_traces
+      type: trace
+      service_name: currencyservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: terminated_pods
-      type: metric
-      metric_name: sum(kube_pod_container_status_terminated{namespace="system-under-evaluation"})
+      limit: 1
+    - name: emailservice_traces
+      type: trace
+      service_name: emailservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: failed_spans
-      type: metric
-      metric_name: sum(rate(otelcol_exporter_send_failed_spans[1m]))
+      limit: 1
+    - name: frauddetectionservice_traces
+      type: trace
+      service_name: frauddetectionservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: network_bytes
-      type: metric
-      metric_name: sum(rate(node_network_receive_bytes_total[1m]) + rate(node_network_transmit_bytes_total[1m])) by (instance)
+      limit: 1
+    - name: paymentservice_traces
+      type: trace
+      service_name: paymentservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: network_drops
-      type: metric
-      metric_name: sum(rate(node_network_receive_drop_total[1m]) + rate(node_network_transmit_drop_total[1m])) by (instance)
+      limit: 1
+    - name: productcatalogservice_traces
+      type: trace
+      service_name: productcatalogservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: network_errors
-      type: metric
-      metric_name: sum(rate(node_network_receive_errs_total[1m]) + rate(node_network_transmit_errs_total[1m])) by (instance)
+      limit: 1
+    - name: quoteservice_traces
+      type: trace
+      service_name: quoteservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: tcp_retransmissions
-      type: metric
-      metric_name: sum(rate(node_netstat_Tcp_RetransSegs[1m])) by (instance)
+      limit: 1
+    - name: shippingservice_traces
+      type: trace
+      service_name: shippingservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: tcp_udp_errors
-      type: metric
-      metric_name: sum(rate(node_netstat_Tcp_InErrs[1m]) + rate(node_netstat_Udp_InErrors[1m])) by (instance)
+      limit: 1
+    - name: cartservice_traces
+      type: trace
+      service_name: cartservice
       left_window: 10s
       right_window: 10s
-      step: 1
-      target: sue
-    - name: node_load
-      type: metric
-      metric_name: node_load1
-      left_window: 10s
-      right_window: 10s
-      step: 1
-      target: sue
-    - name: memory_available
-      type: metric
-      metric_name: node_memory_MemAvailable_bytes
-      left_window: 10s
-      right_window: 10s
-      step: 1
-      target: sue
-    - name: cpu_usage
-      type: metric
-      metric_name: sum(rate(node_cpu_seconds_total{mode!="idle"}[1m])) by (instance)
-      left_window: 10s
-      right_window: 10s
-      step: 1
-      target: sue
-    - name: tcp_connections
-      type: metric
-      metric_name: node_netstat_Tcp_CurrEstab
-      left_window: 10s
-      right_window: 10s
-      step: 1
-      target: sue
+      limit: 1
+
+ 
   treatments:
-    - add_security_context:
-        action: security_context_kubernetes
-        params:
-          {
-            namespace: system-under-evaluation,
-            label_selector: app.kubernetes.io/component,
-            label: recommendationservice,
-            capabilities: { add: ["NET_ADMIN"] },
-          }
-    - delay_treatment:
-        action: delay
-        params: {
-            namespace: system-under-evaluation,
-            label_selector: app.kubernetes.io/name,
-            label: astronomy-shop-recommendationservice,
-            #service_name: node-exporter,
-            delay_time: 45ms,
-            delay_jitter: 45ms,
-            duration: 2m,
-            interface: eth0,
-          }
-    - probabilistic_head_sampling_rate:
-        action: kube_probl
-        params: { sampling_percentage: 5.0, hash_seed: 22 }
     - package_lost_treatment:
         action: kubernetes_loss
         params:
@@ -189,21 +125,6 @@ experiment:
             duration: 1m,
             interface: eth0,
           }
-    - empty_treatment:
-        action: empty
-        params: { duration: 5m }
-    - increase_otel_metric_interval:
-        action: kubernetes_otel_metrics_interval
-        params:
-          {
-            namespace: system-under-evaluation,
-            label_selector: app.kubernetes.io/component,
-            label: recommendationservice,
-            interval: 15s,
-          }
-    - prometheus_scrape_interval:
-        action: kubernetes_prometheus_interval
-        params: { interval: 5s, evaluation_interval: 5s, scrape_timeout: 3s }
   sue:
     compose: opentelemetry-demo/docker-compose.yml
     exclude: [loadgenerator]

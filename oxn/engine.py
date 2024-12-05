@@ -13,7 +13,7 @@ from .runner import ExperimentRunner
 from .docker_orchestration import DockerComposeOrchestrator
 from .kubernetes_orchestrator import KubernetesOrchestrator
 from .report import Reporter
-from .store import configure_output_path, write_dataframe, write_json_data
+from .store import configure_output_path, write_dataframe, write_json_data, write_csv_data
 from .loadgen import LoadGenerator
 from .locust_file_loadgenerator import LocustFileLoadgenerator
 from .utils import utc_timestamp
@@ -180,7 +180,15 @@ class Engine:
                         response_key=response.name,
                         out_path=self.out_path,
                     )
-
+                
+                if self.out_formats and 'csv' in self.out_formats:
+                    write_csv_data(
+                        data=response.data,
+                        experiment_key=self.runner.config_filename,
+                        run_key=self.runner.short_id,
+                        response_key=response.name,
+                        out_path=self.out_path,
+                    )
                 logger.debug(
                     f"Experiment {self.runner.config_filename}: DataFrame: {len(response.data)} rows"
                 )

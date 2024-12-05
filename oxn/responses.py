@@ -16,6 +16,7 @@ from .models.response import ResponseVariable
 from .jaeger import Jaeger
 from .prometheus import Prometheus
 import logging
+from .settings import SUPERVISED_COLUMN, TREATMENT_COLUMN
 
 logger = logging.getLogger(__name__)
 
@@ -282,13 +283,16 @@ class TraceResponseVariable(ResponseVariable):
             # TODO handle this better
             self.data = pd.DataFrame(columns=['start_time'])
             return
-
+        
         scaled_treatment_start = utils.to_microseconds(treatment_start)
         scaled_treatment_end = utils.to_microseconds(treatment_end)
         predicate = (self.data["start_time"] >= scaled_treatment_start) & (
                 self.data["start_time"] <= scaled_treatment_end
         )
-        self.data[label_column] = np.where(predicate, label, "NoTreatment")
+        '''Here I am "melting" down the treatment type column, because the treatment name is essentially a variable and having the "bool" if the treatment happening
+        in another column'''
+        self.data[TREATMENT_COLUMN] = label
+        self.data[SUPERVISED_COLUMN] = np.where(predicate, "Treatment", "NoTreatment")
 
     @staticmethod
     def _tabulate(trace_json) -> pd.DataFrame:
