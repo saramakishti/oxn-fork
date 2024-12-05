@@ -1,27 +1,25 @@
 name: Build and Push Docker Image
 
-on:
-  push:
-    paths:
-      - 'frontend/**'
+name: Build and Push Docker Image to Docker Hub
 
+on: push
 jobs:
-  build:
+  push_to_registry:
+    name: push docker image to hub
     runs-on: ubuntu-latest
-
     steps:
-    - name: Checkout code
-      uses: actions/checkout@v4
+      - name: check repository
+        uses: actions/checkout@v4
 
-    - name: Set up QEMU
-      uses: docker/setup-qemu-action@v3
+      - name: login to docker registry
+        uses: docker/login-action@v3
+        with:
+          username: ${{secrets.DOCKER_USERNAME}}
+          password: ${{secrets.DOCKER_PASSWORD}}
 
-    - name: Set up Docker Buildx
-      uses: docker/setup-buildx-action@v3
-
-    - name: Log in to Docker Hub
-      run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
-
-    - name: Build Docker image
-      working-directory: ./frontend
-      run: docker buildx build --platform linux/amd64,linux/arm64 -t morauen/oxn-frontend:latest --push .
+      - name: build and push docker image to registry
+        uses: docker/build-push-action@v5
+        with:
+          context: frontend/
+          push: true
+          tags: morauen/oxn-frontend:latest
