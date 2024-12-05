@@ -11,7 +11,6 @@ import {
   SidebarMenuItem,
 } from "@/components/ui/sidebar"
 import { items } from "@/configurations/menu"
-import { useState } from "react"
 
 export function AppSidebar() {
 
