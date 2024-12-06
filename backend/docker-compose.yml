@@ -1,0 +1,11 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ../experiments:/mnt/oxn-data/experiments
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/backend
