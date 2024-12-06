@@ -5,7 +5,7 @@ from pathlib import Path
 from jsonschema import validate, ValidationError as JsonSchemaError
 
 # Load schema once at module level
-SCHEMA_PATH = Path(__file__).parent.parent.parent / 'oxn' / 'schemas' / 'experiment_schema.json'
+SCHEMA_PATH = Path(__file__).parent.parent / 'schemas' / 'experiment_schema.json'
 with open(SCHEMA_PATH) as f:
     EXPERIMENT_SCHEMA = json.load(f)
 

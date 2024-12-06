@@ -1,13 +1,12 @@
 services:
-  tests:
+  backend-test:
     build:
       context: .
       dockerfile: Dockerfile.test
     volumes:
-      - oxn-data:/mnt/oxn-data
+      - ../experiments:/mnt/oxn-data/experiments
     environment:
-      - DJANGO_SETTINGS_MODULE=oxn_backend.test_settings
-      - OXN_DATA_DIR=/mnt/oxn-data
+      - OXN_EXPERIMENTS_DIR=/mnt/oxn-data/experiments
 
 volumes:
   oxn-data: 
