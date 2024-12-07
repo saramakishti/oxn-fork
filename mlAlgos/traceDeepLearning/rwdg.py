@@ -5,7 +5,7 @@ import constants
 import itertools
 import pprint
 import numpy as np
-from storage_client import GCloudStorageHandler
+from storage_client import LocalStorageHandler
 from io import StringIO
 
 '''
@@ -56,6 +56,10 @@ class WeightedAdjMatrix:
                     adjency_matrix[row][col] = (tuple_val[0] +1, tuple_val[1] + duration)
 
           return adjency_matrix
+
+     '''this method findes the span in the trace that got initialized first'''
+     def _find_trace_ref_NA(self, single_trace_df : pd.DataFrame) :
+          pass
      
      
      def _find_service_name_for_spanID(self, ref_span_id : str, single_trace_df : pd.DataFrame) -> str:
@@ -114,7 +118,7 @@ class WeightedAdjMatrix:
      dict[m_n, [number of observations between MS m and n , average, variance ]]
      at another point in time we pool the variances with the assuption that the datasets are independent
      '''
-     def get_bounds_for_service_calls(self , adjency_dataFrame : pd.DataFrame) :
+     def get_bounds_for_service_calls(self , adjency_dataFrame : pd.DataFrame, std_amount : float) :
           pass#-> dict[str, [int, float, float]]:
 
 class AdjMatrixController:

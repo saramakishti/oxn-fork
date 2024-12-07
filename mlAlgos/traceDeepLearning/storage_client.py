@@ -6,8 +6,9 @@ Here I use the class coding to an interface for the bridge between local develop
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import os
-from google.cloud import storage
+#from google.cloud import storage
 import constants
+import pandas as pd
 
 class StorageHandler(ABC):
 
@@ -44,30 +45,36 @@ class LocalStorageHandler(StorageHandler):
                print(f"Error: Directory '{dir_name}' not found.")
                return []
      
-     def write_file_to_directory(self, dir_name, file_name, file_content) -> None:
-        try:
-            os.makedirs(dir_name, exist_ok=True)
-            file_path = os.path.join(dir_name, file_name)
-            with open(file_path, 'w') as file:
-                file.write(file_content)
 
-        except Exception as e:
-            print(f"Error: Could not write file '{file_name}' to '{dir_name}'. {e}")
-     
-     def get_file_from_dir(self, dir_name, file_name):
-        try:
-            file_path = os.path.join(dir_name, file_name)
-            with open(file_path, 'r') as file:
-                content = file.read()
-            return content
-        except FileNotFoundError:
-            print(f"Error: File '{file_name}' not found in directory '{dir_name}'.")
-            return None
-        except Exception as e:
-            print(f"Error: Could not retrieve file '{file_name}' from '{dir_name}'. {e}")
-            return None
-     
+     def write_file_to_directory(self, dir_name, file_name, file_content: pd.DataFrame) -> None:
+          try:
+               os.makedirs(dir_name, exist_ok=True)
+               file_path = os.path.join(dir_name, file_name)
+               # saving the file to a directory
+               file_content.to_csv(file_path, index=False)
+          except Exception as e:
+               print(f"Error: Could not write file '{file_name}' to '{dir_name}'. {e}")
 
+     
+     def get_file_from_dir(self, dir_name, file_name) -> pd.DataFrame | None:
+          try:
+               file_path = os.path.join(dir_name, file_name)
+               df = pd.read_csv(file_path)
+               return df
+          except FileNotFoundError:
+               print(f"Error: File '{file_name}' not found in directory '{dir_name}'.")
+               return None
+          except pd.errors.EmptyDataError:
+               print(f"Error: File '{file_name}' is empty or has invalid data.")
+               return None
+          except Exception as e:
+               print(f"Error: Could not retrieve or parse file '{file_name}' from '{dir_name}'. {e}")
+               return None
+
+
+# TODO add OXN storage client
+
+'''
 class GCloudStorageHandler(StorageHandler):
      # bucket name comes from terraform script
      def __init__(self, experiment_id, bucket_name) -> None:
@@ -88,9 +95,8 @@ class GCloudStorageHandler(StorageHandler):
           except Exception as e:
               print(f"problem when listing the files for bucket {self.bucket_name} and experiment {self.experiment_id} : {e.__str__}")
               
-     '''
-     In this case dirname raw_data, transformed_data or eval_data
-     '''
+     #In this case dirname raw_data, transformed_data or eval_data
+   
      def get_file_from_dir(self, dir_name, file_name):
           try:
                bucket = self.client_instance.bucket(self.bucket_name)
@@ -110,3 +116,4 @@ class GCloudStorageHandler(StorageHandler):
           except Exception as e:
                print(f"problem when uploading the file to storag : {e.__str__}")
 
+'''
