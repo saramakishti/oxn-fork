@@ -23,7 +23,7 @@ spec:
         - containerPort: 8000
         volumeMounts:
         - name: backend-storage
-          mountPath: /app/data
+          mountPath: /mnt/oxn-data
       volumes:
       - name: backend-storage
         persistentVolumeClaim:
