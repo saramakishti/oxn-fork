@@ -15,8 +15,16 @@ spec:
       labels:
         app: {{ .Chart.Name }}
     spec:
+      serviceAccountName: {{ .Release.Name }}-backend-sa
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}
         ports:
         - containerPort: 8000
+        volumeMounts:
+        - name: backend-storage
+          mountPath: /app/data
+      volumes:
+      - name: backend-storage
+        persistentVolumeClaim:
+          claimName: {{ .Release.Name }}-backend-pvc
