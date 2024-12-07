@@ -7,7 +7,7 @@ from backend.internal.experiment_manager import ExperimentManager
 app = FastAPI(title="OXN API", version="1.0.0")
 
 # Initialize experiment manager
-# TODO: Get base path from config/env
+# TODO: Get base path from some kind of config
 experiment_manager = ExperimentManager("/mnt/oxn-data")
 
 # Pydantic models for request/response validation
@@ -17,7 +17,7 @@ class ExperimentCreate(BaseModel):
 
 class ExperimentRun(BaseModel):
     runs: int = 1
-    output_format: str = "hdf"  # or json
+    output_format: str = "json"  # or csv
 
 class ExperimentStatus(BaseModel):
     id: str
