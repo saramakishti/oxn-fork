@@ -5,7 +5,7 @@ metadata:
   labels:
     type: local
 spec:
-  storageClassName: manual
+  storageClassName: openebs-hostpath
   capacity:
     storage: 5Gi
   accessModes:
@@ -18,9 +18,9 @@ kind: PersistentVolumeClaim
 metadata:
   name: {{ .Release.Name }}-backend-pvc
 spec:
-  storageClassName: manual
   accessModes:
     - ReadWriteOnce
   resources:
     requests:
       storage: 5Gi
+  storageClassName: "openebs-hostpath"
