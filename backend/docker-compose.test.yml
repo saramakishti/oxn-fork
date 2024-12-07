@@ -1,11 +1,9 @@
 services:
-  backend:
+  backend-test:
     build:
       context: .
-      dockerfile: Dockerfile
+      dockerfile: Dockerfile.test
     volumes:
       - ./mnt:/mnt/oxn-data/experiments
-    ports:
-      - "8000:8000"
     environment:
-      - PYTHONPATH=/backend
+      - PYTHONPATH=/backend 
