@@ -16,6 +16,8 @@ spec:
         app: {{ .Chart.Name }}
     spec:
       serviceAccountName: {{ .Release.Name }}-backend-sa
+      nodeSelector:
+        app: oxn-host
       containers:
       - name: {{ .Chart.Name }}
         image: {{ .Values.image.repository }}:{{ .Values.image.tag }}

@@ -63,3 +63,7 @@ kops export kubeconfig --admin
 echo "Waiting for cluster to be ready..."
 kops validate cluster --wait 10m
 
+OXN_NODE_HOST=$(kubectl get nodes -o jsonpath='{.items[?(@.metadata.labels.node-role\.kubernetes\.io/node=="")].metadata.name}' | awk '{print $1}')
+kubectl label node "$OXN_NODE_HOST" "app=oxn-host"
+
+
