@@ -73,49 +73,64 @@ class ExperimentManager:
     
     def run_experiment(self, experiment_id, output_format, runs):
         """Run experiment"""
-        if not self.experiment_exists(experiment_id):
-            raise HTTPException(status_code=404, detail="Experiment not found")
-        experiment = self.get_experiment(experiment_id)['spec']
-        report_path = self.experiments_dir / experiment_id / 'report'
-        out_path = self.experiments_dir / experiment_id / 'data'
+        self.acquire_lock()
+        try:
+            if not self.experiment_exists(experiment_id):
+                raise HTTPException(status_code=404, detail="Experiment not found")
+            experiment = self.get_experiment(experiment_id)['spec']
+            report_path = self.experiments_dir / experiment_id / 'report'
+            out_path = self.experiments_dir / experiment_id / 'data'
 
-        orchestrator = KubernetesOrchestrator(experiment_config=experiment)
+            orchestrator = KubernetesOrchestrator(experiment_config=experiment)
         
-        engine = Engine(
-            configuration_path=experiment,
-            report_path=report_path,
-            out_path=out_path,
-            out_formats=[output_format],
-            orchestrator_class=orchestrator,
-            spec=experiment
-        )
+            engine = Engine(
+                configuration_path=experiment,
+                report_path=report_path,
+                out_path=out_path,
+                out_formats=[output_format],
+                orchestrator_class=orchestrator,
+                spec=experiment
+            )
 
-        engine.run(runs=runs, orchestration_timeout=None, randomize=False, accounting=False)
-
+            engine.run(runs=runs, orchestration_timeout=None, randomize=False, accounting=False)
+        finally:
+            self.release_lock()
     
     def experiment_exists(self, experiment_id):
         """Check if experiment exists"""
-        return (self.experiments_dir / experiment_id / 'experiment.json').exists()
+        self.acquire_lock()
+        try:
+            return (self.experiments_dir / experiment_id / 'experiment.json').exists()
+        finally:
+            self.release_lock()
 
     def update_experiment(self, experiment_id, updates):
         """Update experiment config"""
-        experiment = self.get_experiment(experiment_id)
-        if experiment:
-            experiment.update(updates)
+        self.acquire_lock()
+        try:
+            experiment = self.get_experiment(experiment_id)
+            if experiment:
+                experiment.update(updates)
             with open(self.experiments_dir / experiment_id / 'experiment.json', 'w') as f:
                 json.dump(experiment, f, indent=2)
-        return experiment
+            return experiment
+        finally:
+            self.release_lock()
 
     def list_experiments(self):
         """List all experiments"""
-        experiments = {}
-        for exp_dir in self.experiments_dir.iterdir():
-            if exp_dir.is_dir():
-                try:
-                    with open(exp_dir / 'experiment.json') as f:
-                        experiments[exp_dir.name] = json.load(f)
-                except FileNotFoundError:
-                    continue
+        self.acquire_lock()
+        try:
+            experiments = {}
+            for exp_dir in self.experiments_dir.iterdir():
+                if exp_dir.is_dir():
+                    try:
+                        with open(exp_dir / 'experiment.json') as f:
+                            experiments[exp_dir.name] = json.load(f)
+                    except FileNotFoundError:
+                        continue
+        finally:
+            self.release_lock()
         return experiments
 
     def acquire_lock(self):
