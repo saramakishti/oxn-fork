@@ -6,7 +6,7 @@ services:
     volumes:
       - ./mnt:/mnt/oxn-data/experiments
     ports:
-      - "2000:2000"
+      - "8000:8000"
     environment:
       - PYTHONPATH=/backend
 
