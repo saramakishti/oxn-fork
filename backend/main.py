@@ -28,9 +28,6 @@ class ExperimentStatus(BaseModel):
     completed_at: Optional[datetime]
     error_message: Optional[str]
 
-class ExperimentFileResponse(BaseModel):
-    response_names: List[str]
-    response_file_suffixes: List[str] 
 
 @app.post("/experiments", response_model=ExperimentStatus)
 async def create_experiment(experiment: ExperimentCreate):
@@ -83,8 +80,9 @@ def get_experiment_status(experiment_id: str):
         raise HTTPException(status_code=404, detail="Experiment not found")
     return experiment
 
-# Results Endpoints
-@app.get("/experiments/{experiment_id}/{response_name}/", response_class=None)
+'''gets the resulting data for the given experiment id and respone variable id and the file format. If file is found it will be returned. Else a 404 not found will be given.
+Supported file types are json and csv. '''
+@app.get("/experiments/{experiment_id}/data/{response_name}/", response_class=None)
 async def get_experiment_data(
     experiment_id: str,
     response_name : str,
@@ -97,7 +95,8 @@ async def get_experiment_data(
     except FileNotFoundError as e:
         raise HTTPException(status_code=404, detail=f"response variable: {response_name} for experiment: {experiment_id} not found")
    
-
+'''Lists the reponse variables in the directory for a given, experiment id with file ending suffixes. Gives back empty lists if experiemnt id is not
+a directory, or the directory is emtpy. Will be mainly used by the analysis service'''
 @app.get("/experiments/{experiment_id}" , response_model=None)
 async def list_experiment_files(
     experiment_id : str
@@ -132,6 +131,8 @@ async def run_batch_experiments(
     # TODO: Implement batch execution queue
     pass
 
+'''This endpoint lists all experiments in the file system with corresponding meta data. The difference  to the route : /experiemnts/experiments_id that this route lists
+repsonse variables inside a directory and does not list directories. This route will be mainly used by the frontend.'''
 @app.get("/experiments", response_model=List[ExperimentStatus])
 async def list_experiments(
     status: Optional[str] = None,
@@ -147,9 +148,4 @@ async def list_experiments(
 async def health_check():
     """Simple health check endpoint"""
     return {"status": "healthy"}
-
-
-@app.get("/test")
-async def test_file():
-    return FileResponse("blabla.csv", media_type="text/csv", filename="test.csv")
 
