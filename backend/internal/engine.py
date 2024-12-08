@@ -34,7 +34,7 @@ class Engine:
         assert configuration_path is not None, "Configuration path must be specified"
         self.config = configuration_path
         """The path to the configuration file for this engine"""
-        self.spec = None
+        self.spec = spec
         """The loaded experiment specification"""
         self.report_path = report_path
         """The path to write the experiment report to"""

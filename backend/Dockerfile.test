@@ -8,12 +8,12 @@ WORKDIR /backend
 # Copy project files
 COPY . /backend
 
-
 RUN uv sync --frozen --no-cache
 RUN uv pip install ".[test]"
+
+RUN uv pip install httpx uvicorn[standard] anyio
 # Create data directories
 RUN mkdir -p /mnt/oxn-data/experiments
 
-
 # Default command runs tests
-CMD ["uv", "run","pytest", "tests/", "-v"] 
+CMD ["uv", "run", "pytest", "test_main.py", "-v", "--tb=short", "-s"]

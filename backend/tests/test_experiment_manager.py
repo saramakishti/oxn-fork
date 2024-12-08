@@ -1,9 +1,13 @@
+import time
+import unittest.mock
 import pytest
 from pathlib import Path
 import json
 import shutil
 import tempfile
 from backend.internal.experiment_manager import ExperimentManager
+
+
 
 @pytest.fixture
 def test_dir():
@@ -165,6 +169,7 @@ def test_list_experiments(experiment_manager, sample_config):
     """Test listing all experiments"""
     # Create a few experiments
     exp1 = experiment_manager.create_experiment("Test 1", sample_config)
+    time.sleep(1)
     exp2 = experiment_manager.create_experiment("Test 2", sample_config)
     
     experiments = experiment_manager.list_experiments()
@@ -192,8 +197,8 @@ async def test_run_experiment(experiment_manager, sample_config):
         config=sample_config
     )
     
-    # Mock the Engine class to avoid actual execution
-    with pytest.mock.patch('backend.internal.engine.Engine') as MockEngine:
+    # Engine class mock
+    with unittest.mock.patch('backend.internal.engine.Engine') as MockEngine:
         mock_engine = MockEngine.return_value
         
         experiment_manager.run_experiment(
@@ -202,11 +207,10 @@ async def test_run_experiment(experiment_manager, sample_config):
             runs=1
         )
         
-        # Verify Engine was called with correct parameters
         MockEngine.assert_called_once()
         mock_engine.run.assert_called_once_with(
             runs=1,
             orchestration_timeout=None,
             randomize=False,
             accounting=False
-        ) 
+        )

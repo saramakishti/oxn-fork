@@ -10,6 +10,7 @@ from fastapi.responses import FileResponse
 from typing import Optional, Tuple, List
 
 from backend.internal.engine import Engine
+from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 
 logger = logging.getLogger(__name__)
 
@@ -18,13 +19,16 @@ class ExperimentManager:
         self.base_path = Path(base_path)
         self.experiments_dir = self.base_path / 'experiments'
         self.lock_file = self.base_path / '.lock'
+        self.counter = 0
         
         # Ensure directories exist
         self.experiments_dir.mkdir(parents=True, exist_ok=True)
 
     def create_experiment(self, name, config):
         """Create new experiment directory and config file"""
-        experiment_id = str(int(time.time()))
+        self.acquire_lock()
+        experiment_id = str(self.counter) + str(int(time.time()))
+        self.counter += 1
         experiment_dir = self.experiments_dir / experiment_id
         
         experiment = {
@@ -53,15 +57,19 @@ class ExperimentManager:
         with open(experiment_dir / 'experiment.json', 'w') as f:
             json.dump(experiment, f, indent=2)
         
+        self.release_lock()
         return experiment
 
     def get_experiment(self, experiment_id):
         """Get experiment config"""
+        self.acquire_lock()
         try:
             with open(self.experiments_dir / experiment_id / 'experiment.json') as f:
                 return json.load(f)
         except FileNotFoundError:
             return None
+        finally:
+            self.release_lock()
     
     def run_experiment(self, experiment_id, output_format, runs):
         """Run experiment"""
@@ -70,7 +78,17 @@ class ExperimentManager:
         experiment = self.get_experiment(experiment_id)['spec']
         report_path = self.experiments_dir / experiment_id / 'report'
         out_path = self.experiments_dir / experiment_id / 'data'
-        engine = Engine(configuration_path=None, report_path=report_path, out_path=out_path, out_formats=[output_format], orchestrator_class=None, spec=experiment)
+
+        orchestrator = KubernetesOrchestrator(experiment_config=experiment)
+        
+        engine = Engine(
+            configuration_path=experiment,
+            report_path=report_path,
+            out_path=out_path,
+            out_formats=[output_format],
+            orchestrator_class=orchestrator,
+            spec=experiment
+        )
 
         engine.run(runs=runs, orchestration_timeout=None, randomize=False, accounting=False)
 
@@ -103,9 +121,12 @@ class ExperimentManager:
     def acquire_lock(self):
         """File-based locking using fcntl"""
         try:
-            self.lock_fd = open(self.lock_file, 'w')
-            fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
-            return True
+            # store the lock file path as an instance variable if not already open
+            if not hasattr(self, 'lock_fd'):
+                self.lock_fd = open(self.lock_file, 'w')
+                fcntl.flock(self.lock_fd, fcntl.LOCK_EX | fcntl.LOCK_NB)
+                return True
+            return False  # lock is held
         except (IOError, BlockingIOError):
             return False
 
