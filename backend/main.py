@@ -3,6 +3,7 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
 from pydantic import BaseModel
 from datetime import datetime
 from backend.internal.experiment_manager import ExperimentManager
+from fastapi.responses import FileResponse
 
 app = FastAPI(title="OXN API", version="1.0.0")
 
@@ -27,6 +28,9 @@ class ExperimentStatus(BaseModel):
     completed_at: Optional[datetime]
     error_message: Optional[str]
 
+class ExperimentFileResponse(BaseModel):
+    response_names: List[str]
+    response_file_suffixes: List[str] 
 
 @app.post("/experiments", response_model=ExperimentStatus)
 async def create_experiment(experiment: ExperimentCreate):
@@ -80,19 +84,29 @@ def get_experiment_status(experiment_id: str):
     return experiment
 
 # Results Endpoints
-@app.get("/experiments/{experiment_id}/data")
+@app.get("/experiments/{experiment_id}/{response_name}/", response_class=None)
 async def get_experiment_data(
     experiment_id: str,
-    format: str = Query("hdf", regex="^(hdf|json)$")
+    response_name : str,
+    format: str = Query("csv", regex="^(json|csv)$")
 ):
-    """
-    Get experiment run data in specified format.
-    - Validates experiment exists and has completed
-    - Converts data format if needed
-    - Returns file download
-    """
-    # TODO: Implement file download response
-    pass
+    if format not in {"json", "csv"}:
+        raise HTTPException(status_code=400, detail="Invalid type. Only 'json' and 'csv' are allowed.")
+    try:
+        return experiment_manager.get_experiment_data(experiment_id=experiment_id, response_name=response_name, file_ending=format)
+    except FileNotFoundError as e:
+        raise HTTPException(status_code=404, detail=f"response variable: {response_name} for experiment: {experiment_id} not found")
+   
+
+@app.get("/experiments/{experiment_id}" , response_model=None)
+async def list_experiment_files(
+    experiment_id : str
+):
+    res  =  experiment_manager.list_experiment_variables(experiment_id=experiment_id)
+    if res is not None:
+        return {"response_names": res[0], "response_file_suffixes": res[1]}
+    else:
+        return {"response_names": [], "response_file_suffixes": []}
 
 @app.get("/experiments/{experiment_id}/benchmark")
 async def get_benchmark_data(experiment_id: str):
@@ -133,4 +147,9 @@ async def list_experiments(
 async def health_check():
     """Simple health check endpoint"""
     return {"status": "healthy"}
+
+
+@app.get("/test")
+async def test_file():
+    return FileResponse("blabla.csv", media_type="text/csv", filename="test.csv")
 

@@ -1,3 +1,4 @@
+
 from fastapi import HTTPException
 from pathlib import Path
 import json
@@ -5,6 +6,8 @@ import time
 from datetime import datetime
 import fcntl
 import logging
+from fastapi.responses import FileResponse
+from typing import Optional, Tuple, List
 
 from backend.internal.engine import Engine
 
@@ -112,3 +115,42 @@ class ExperimentManager:
             fcntl.flock(self.lock_fd, fcntl.LOCK_UN)
             self.lock_fd.close()
             delattr(self, 'lock_fd')
+    
+    def get_experiment_data(self, experiment_id : str, response_name : str , file_ending : str):
+        '''gets experiments data for a given id and data format, the given file'''
+        path = Path(self.experiments_dir) / experiment_id /(response_name + "." + file_ending)
+        logger.info(f"Path: {path}")
+        logger.info(f"Suffix: {path.suffix}")
+        if not path.is_file():
+            raise FileNotFoundError()
+        
+        if path.suffix == ".json":
+            return FileResponse(path, media_type="application/json", filename=f"{response_name}{path.suffix}")
+        elif path.suffix == ".csv":
+            return FileResponse(path, media_type="text/csv", filename=f"{response_name}{path.suffix}")
+        else:
+            logger.info("unexpected behavior inside the filesystem")
+            raise FileNotFoundError("queried for a not specified error")
+
+
+    def list_experiment_variables(self, experiment_id : str )-> Optional[Tuple[List[str], List[str]]]:
+        '''list all files (response varibales) in a given experiment folder, returns None if folder does not exist or is empty'''
+        path = Path(self.experiments_dir ) / experiment_id
+        if not path.is_dir():
+            logger.error(f"experiment directory {experiment_id} does not exist")
+            return None
+
+        variable_names = [file.name.split('.')[0] for file in path.iterdir() if file.is_file()]
+        file_endings = [file.suffix[1:] for file in path.iterdir() if file.is_file()]
+
+        if not variable_names:
+            logger.info(f"empty experiment directory with ID {experiment_id}, no reponse variables found")
+            return None
+
+        return variable_names , file_endings
+        
+        
+
+
+        
+
