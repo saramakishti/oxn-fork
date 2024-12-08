@@ -141,11 +141,18 @@ async def list_experiments(
     """
     List all experiments
     """
-    return experiment_manager.list_experiments()
+    experiments = experiment_manager.list_experiments()
+    # Convert dict to list for response validation
+    return list(experiments.values())
 
 
 @app.get("/health")
 async def health_check():
     """Simple health check endpoint"""
     return {"status": "healthy"}
+
+@app.get("/experiments/{experiment_id}/config")
+async def get_experiment_config(experiment_id: str):
+    """Get experiment configuration"""
+    return experiment_manager.get_experiment(experiment_id)
 
