@@ -21,7 +21,7 @@ from backend.internal.utils import utc_timestamp
 from backend.internal.errors import OxnException, OrchestrationException
 
 logger = logging.getLogger(__name__)
-
+logger.info = lambda message: print(message)
 
 class Engine:
     """

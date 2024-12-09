@@ -1,11 +1,34 @@
 from typing import Dict, List, Optional
+import logging
+uvicorn_logger_error = logging.getLogger("uvicorn.error")
+uvicorn_logger_error.setLevel(logging.DEBUG)
+uvicorn_logger_access = logging.getLogger("uvicorn.access")
+uvicorn_logger_access.setLevel(logging.DEBUG)
+
+logger = logging.getLogger("uvicorn")
+logger.handlers = uvicorn_logger_error.handlers
+logger.setLevel(logging.DEBUG)
+
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
+
 from pydantic import BaseModel
 from datetime import datetime
-from backend.internal.experiment_manager import ExperimentManager
+from internal.experiment_manager import ExperimentManager
 from fastapi.responses import FileResponse
 
+
+
+
 app = FastAPI(title="OXN API", version="1.0.0")
+""" @app.on_event("startup")
+async def startup_event():
+    logger = logging.getLogger("uvicorn.access")
+    handler = logging.StreamHandler()
+    handler.setFormatter(logging.Formatter("%(asctime)s - %(levelname)s - %(message)s"))
+    logger.addHandler(handler) """
+
+
+
 
 # Initialize experiment manager
 # TODO: Get base path from some kind of config
@@ -35,6 +58,7 @@ async def create_experiment(experiment: ExperimentCreate):
     Create a new experiment with configuration.
     Stores experiment metadata and creates necessary directories.
     """
+    print(f"PRINT Creating experiment: {experiment.name}")
     return experiment_manager.create_experiment(
         name=experiment.name,
         config=experiment.config
@@ -73,7 +97,7 @@ async def run_experiment(
     }
 
 @app.get("/experiments/{experiment_id}/status", response_model=ExperimentStatus)
-def get_experiment_status(experiment_id: str):
+async def get_experiment_status(experiment_id: str):
     """Get current status of an experiment"""
     experiment = experiment_manager.get_experiment(experiment_id)
     if not experiment:
@@ -156,3 +180,7 @@ async def get_experiment_config(experiment_id: str):
     """Get experiment configuration"""
     return experiment_manager.get_experiment(experiment_id)
 
+# run with uvicorn:
+if __name__ == "__main__":
+    import uvicorn
+    uvicorn.run("main:app", host="0.0.0.0", port=8000, reload=False, log_config=None)
