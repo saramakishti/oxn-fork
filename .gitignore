@@ -38,3 +38,4 @@ terraform.tfstate.backup
 # Cluster configuration
 config/.cluster-prefix
 backend.egg-info
+**.cluster-name
