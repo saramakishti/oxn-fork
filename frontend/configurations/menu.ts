@@ -1,5 +1,5 @@
 import { MenuId } from "@/types"
-import { FileChartLine, Search, Settings, Gauge, Activity } from "lucide-react"
+import { FileChartLine, Search, Settings, Gauge, Activity, FileSliders, FileText } from "lucide-react"
 
 export const items = [
   {
@@ -11,7 +11,13 @@ export const items = [
   {
     id: MenuId.EXPERIMENTS,
     title: "Experiments",
-    url: "/all-experiments",
+    url: "/experiments",
+    icon: FileSliders,
+  },
+  {
+    id: MenuId.RESULTS,
+    title: "Results",
+    url: "/results",
     icon: FileChartLine,
   },
   {

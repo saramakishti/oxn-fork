@@ -10,8 +10,8 @@ export default function Home() {
         <StartExperimentDialog />
         <Button variant="outline">
           <Telescope />
-          <Link href='/all-experiments'>
-            Explore past experiments</Link>
+          <Link href='/results'>
+            Explore past results</Link>
         </Button>
       </div>
       <div className="my-4">

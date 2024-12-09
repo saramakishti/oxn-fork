@@ -1,6 +1,7 @@
 export enum MenuId {
   DASHBOARD = 'dashboard',
   EXPERIMENTS = 'experiments',
+  RESULTS = 'results',
   REALTIME = 'realtime',
   SEARCH = 'search',
   SETTINGS = 'settings',

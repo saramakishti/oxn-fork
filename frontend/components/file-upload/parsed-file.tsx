@@ -5,28 +5,46 @@ import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Button } from "../ui/button";
 
+import axios from "axios"
+
 interface ParsedContentDisplayProps {
   fileName: string;
   parsedContent: object;
   onRemoveFile: () => void;
+  handleDialogClose: () => void;
 }
 
 export default function ParsedContentDisplay({
   fileName,
   parsedContent,
   onRemoveFile,
+  handleDialogClose,
 }: ParsedContentDisplayProps) {
 
   const [isSavedFile, setIsSavedFile] = React.useState(false)
+  const [experimentId, setExperimentId] = React.useState(null);
+
 
   const handleFileSave = () => {
-    //TODO: Add API to save file in the backend
     setIsSavedFile(true);
+    // axios({
+    //   method: 'post',
+    //   url: '/experiments',
+    //   data: {
+    //     file: parsedContent
+    //   }
+    // });
   }
 
   const handleStartExperiment = () => {
-    //TODO: Add API to start experiment
     alert('Experiment is starting...')
+    handleDialogClose();
+    // if(experimentId){
+    //   axios({
+    //     method: 'post',
+    //     url: `/experiments/${experimentId}/run`,
+    //   });
+    // }
   }
 
   return (
@@ -58,7 +76,7 @@ export default function ParsedContentDisplay({
           {isSavedFile ? 'File saved!' : 'Save file'}
         </Button>
 
-        <Button onClick={handleStartExperiment}>
+        <Button disabled={!isSavedFile} onClick={handleStartExperiment}>
           <Cable />
           Start
         </Button>

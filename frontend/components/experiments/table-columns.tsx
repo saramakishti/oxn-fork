@@ -10,7 +10,7 @@ import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
 
 
-export const allExperimentsConfig: ColumnDef<ExperimentType>[] = [
+export const allResultsConfig: ColumnDef<ExperimentType>[] = [
   {
     accessorKey: "experimentDate",
     header: ({ column }) => {
@@ -87,7 +87,7 @@ export const allExperimentsConfig: ColumnDef<ExperimentType>[] = [
             <DropdownMenuSeparator />
             <DropdownMenuItem className="cursor-pointer">
               <Eye />
-              <Link href={`/all-experiments/${experimentId}`}>View details</Link>
+              <Link href={`/results/${experimentId}`}>View details</Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
               <Button>
@@ -103,7 +103,7 @@ export const allExperimentsConfig: ColumnDef<ExperimentType>[] = [
   },
 ];
 
-export const experimentDetailsConfig: ColumnDef<any>[] = [
+export const resultDetailsConfig: ColumnDef<any>[] = [
   // {
   //   accessorKey: 'experimentId',
   //   header: 'Experiment ID',

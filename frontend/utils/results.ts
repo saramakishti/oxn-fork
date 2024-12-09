@@ -2,7 +2,7 @@ import { ExperimentDetailsType, ExperimentType } from "@/types";
 import { Experiment, Run, Interaction, Loadgen } from '../types/experiment';
 
 
-export function prepareExperimentTableData(data: Experiment[]): ExperimentType[] {
+export function prepareResultsTableData(data: Experiment[]): ExperimentType[] {
   return data.map((experiment) => {
     const runs = Object.values(experiment.runs);
     const treatmentNamesSet = new Set<string>();
@@ -27,7 +27,7 @@ export function prepareExperimentTableData(data: Experiment[]): ExperimentType[]
 }
 
 
-export function prepareExperimentDetailsData(data: Experiment | null): ExperimentDetailsType[] {
+export function prepareResultDetailsData(data: Experiment | null): ExperimentDetailsType[] {
   const rows: ExperimentDetailsType[] = [];
 
   if (data) {

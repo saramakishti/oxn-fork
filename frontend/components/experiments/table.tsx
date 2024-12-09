@@ -24,13 +24,13 @@ import { Button } from "../ui/button"
 import { Input } from "@/components/ui/input"
 
 
-interface ExperimentTableProps<TData, TValue> {
+interface ExperimentResultsTableProps<TData, TValue> {
   columns: ColumnDef<TData, TValue>[]
   data: TData[]
   filterColumnKey?: string;
 }
 
-export function ExperimentTable<TData, TValue>({ data, columns, filterColumnKey = "experimentId" }: ExperimentTableProps<TData, TValue>) {
+export function ExperimentResultsTable<TData, TValue>({ data, columns, filterColumnKey = "experimentId" }: ExperimentResultsTableProps<TData, TValue>) {
 
   const [sorting, setSorting] = React.useState<SortingState>([])
   const [columnFilters, setColumnFilters] = React.useState<ColumnFiltersState>(

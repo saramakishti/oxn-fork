@@ -1,4 +1,4 @@
-export const allExperiments = [
+export const allResults = [
   {
     "experiment_id": "001",
     "date": "2024-11-17T15:10:56.143Z",
