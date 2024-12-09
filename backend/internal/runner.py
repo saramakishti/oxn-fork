@@ -46,7 +46,7 @@ from backend.internal.models.treatment import Treatment
 from backend.internal.models.orchestrator import Orchestrator
 
 logger = logging.getLogger(__name__)
-
+logger.info = lambda message: print(message)
 
 class ExperimentRunner:
     """

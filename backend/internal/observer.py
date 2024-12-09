@@ -16,7 +16,7 @@ from backend.internal.models.response import ResponseVariable
 from backend.internal.utils import time_string_to_seconds
 
 logger = logging.getLogger(__name__)
-
+logger.info = lambda message: print(message)
 
 class Observer:
     """

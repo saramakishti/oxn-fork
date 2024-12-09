@@ -13,6 +13,7 @@ from backend.internal.engine import Engine
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 
 logger = logging.getLogger(__name__)
+logger.info = lambda message: print(message)
 
 class ExperimentManager:
     def __init__(self, base_path):
@@ -30,7 +31,9 @@ class ExperimentManager:
         experiment_id = str(self.counter) + str(int(time.time()))
         self.counter += 1
         experiment_dir = self.experiments_dir / experiment_id
-        
+        logger.info(f"Creating experiment: {name}")
+        logger.info(f"Experiment ID: {experiment_id}")
+        logger.info(f"Experiment Directory: {experiment_dir}")
         experiment = {
             'id': experiment_id,
             'name': name,
@@ -77,6 +80,8 @@ class ExperimentManager:
         try:
             if not self.experiment_exists(experiment_id):
                 raise HTTPException(status_code=404, detail="Experiment not found")
+            logger.info(f"Changing experiment status to RUNNING")
+            self.update_experiment(experiment_id, {'status': 'RUNNING'})
             experiment = self.get_experiment(experiment_id)['spec']
             report_path = self.experiments_dir / experiment_id / 'report'
             out_path = self.experiments_dir / experiment_id / 'data'
@@ -106,16 +111,14 @@ class ExperimentManager:
 
     def update_experiment(self, experiment_id, updates):
         """Update experiment config"""
-        self.acquire_lock()
-        try:
-            experiment = self.get_experiment(experiment_id)
-            if experiment:
-                experiment.update(updates)
+        experiment = self.get_experiment(experiment_id)
+        if experiment:
+            experiment.update(updates)
             with open(self.experiments_dir / experiment_id / 'experiment.json', 'w') as f:
                 json.dump(experiment, f, indent=2)
-            return experiment
-        finally:
-            self.release_lock()
+                return experiment
+        else:
+            return None
 
     def list_experiments(self):
         """List all experiments"""

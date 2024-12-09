@@ -9,5 +9,7 @@ services:
       - "8000:8000"
     environment:
       - PYTHONPATH=/backend
+      - LOG_LEVEL=DEBUG
+      - PYTHONUNBUFFERED=1
 
   

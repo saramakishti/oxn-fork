@@ -18,7 +18,7 @@ from backend.internal.prometheus import Prometheus
 import logging
 
 logger = logging.getLogger(__name__)
-
+logger.info = lambda message: print(message)
 
 class MetricResponseVariable(ResponseVariable):
     @property
