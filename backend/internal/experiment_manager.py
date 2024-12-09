@@ -73,6 +73,14 @@ class ExperimentManager:
             return None
         finally:
             self.release_lock()
+
+    def get_experiment_report(self, experiment_id):
+        """Get experiment report"""
+        report_dir = self.experiments_dir / experiment_id / 'report'
+        for file in report_dir.glob('*.yaml'):
+            with open(file) as f:
+                return f.read()
+        return None
     
     def run_experiment(self, experiment_id, output_format, runs):
         """Run experiment"""

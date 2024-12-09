@@ -7,7 +7,7 @@ import re
 import yaml
 import time
 
-import logger
+import logging
 from typing import Optional, List, Tuple
 from click import File
 from kubernetes import client, config
@@ -17,6 +17,7 @@ from kubernetes.client.models.v1_deployment import V1Deployment
 from kubernetes.client.models.v1_pod import V1Pod
 
 from backend.internal.models.orchestrator import Orchestrator  # Import the abstract base class
+logger = logging.getLogger(__name__)
 logger.info = lambda message: print(message)
 from backend.internal.errors import OxnException, OrchestratorException, OrchestratorResourceNotFoundException
 
