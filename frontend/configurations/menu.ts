@@ -1,5 +1,5 @@
 import { MenuId } from "@/types"
-import { FileChartLine, Search, Settings, Gauge, FileSliders, Activity } from "lucide-react"
+import { FileChartLine, Search, Settings, Gauge, Activity, FileSliders, FileText } from "lucide-react"
 
 export const items = [
   {
@@ -9,16 +9,16 @@ export const items = [
     icon: Gauge,
   },
   {
-    id: MenuId.RESULTS,
-    title: "Results & reports",
-    url: "/results-and-reports",
-    icon: FileChartLine,
+    id: MenuId.EXPERIMENTS,
+    title: "Experiments",
+    url: "/experiments",
+    icon: FileSliders,
   },
   {
-    id: MenuId.EXPERIMENT,
-    title: "Experiment setup",
-    url: "/experiment-setup",
-    icon: FileSliders,
+    id: MenuId.RESULTS,
+    title: "Results",
+    url: "/results",
+    icon: FileChartLine,
   },
   {
     id: MenuId.REALTIME,

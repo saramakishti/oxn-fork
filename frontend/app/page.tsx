@@ -1,51 +1,22 @@
-'use client'
+import Link from "next/link";
 import { Button } from "@/components/ui/button";
-import {
-  Dialog,
-  DialogContent,
-  DialogDescription,
-  DialogHeader,
-  DialogTitle,
-  DialogTrigger,
-  DialogFooter
-} from "@/components/ui/dialog"
-import { Input } from "@/components/ui/input"
-import { Label } from "@/components/ui/label"
+import { Telescope } from "lucide-react";
+import StartExperimentDialog from "@/components/dashboard/start-experiment";
 
 export default function Home() {
-
   return (
     <div>
-      <Dialog>
-        <DialogTrigger asChild>
-          <Button variant="default">Start experiment</Button>
-        </DialogTrigger>
-        <DialogContent className="sm:max-w-[425px]">
-          <DialogHeader>
-            <DialogTitle>Start new experiment</DialogTitle>
-            <DialogDescription>
-              Upload a YAML file with experiment configurations.
-            </DialogDescription>
-          </DialogHeader>
-          <div className="grid gap-4 py-4">
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="name" className="text-right">
-                Name
-              </Label>
-              <Input id="name" value="Pedro Duarte" className="col-span-3" />
-            </div>
-            <div className="grid grid-cols-4 items-center gap-4">
-              <Label htmlFor="username" className="text-right">
-                Username
-              </Label>
-              <Input id="username" value="@peduarte" className="col-span-3" />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button type="submit">Save changes</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
+      <div className="flex justify-between">
+        <StartExperimentDialog />
+        <Button variant="outline">
+          <Telescope />
+          <Link href='/results'>
+            Explore past results</Link>
+        </Button>
+      </div>
+      <div className="my-4">
+        Chart coming soon...
+      </div>
     </div>
   );
 }
