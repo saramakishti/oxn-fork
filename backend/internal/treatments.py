@@ -37,7 +37,7 @@ from backend.internal.utils import (
 from backend.internal.models.treatment import Treatment
 
 logger = logging.getLogger(__name__)
-
+logger.info = lambda message: print(message)
 
 class EmptyTreatment(Treatment):
     """

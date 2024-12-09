@@ -32,6 +32,8 @@ class ExperimentManager:
         self.counter += 1
         experiment_dir = self.experiments_dir / experiment_id
         logger.info(f"Creating experiment: {name}")
+        logger.info(f"Experiment ID: {experiment_id}")
+        logger.info(f"Experiment Directory: {experiment_dir}")
         experiment = {
             'id': experiment_id,
             'name': name,

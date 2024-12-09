@@ -19,7 +19,7 @@ from backend.internal.models.orchestrator import Orchestrator
 from backend.internal.utils import time_string_to_seconds
 
 logger = logging.getLogger(__name__)
-
+logger.info = lambda message: print(message)
 
 class LoadGenerator:
     """Load generation for experiments

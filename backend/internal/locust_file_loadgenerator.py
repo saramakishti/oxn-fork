@@ -16,7 +16,7 @@ from gevent import Greenlet
 from gevent.pool import Group
 
 logger = logging.getLogger(__name__)
-
+logger.info = lambda message: print(message)
 
 class LocustFileLoadgenerator:
     """

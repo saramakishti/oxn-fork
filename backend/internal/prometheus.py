@@ -16,7 +16,7 @@ from backend.internal.models.orchestrator import Orchestrator
 from backend.internal.errors import PrometheusException
 
 logger = logging.getLogger(__name__)
-
+logger.info = lambda message: print(message)
 
 # NOTE: prometheus wire timestamps are in milliseconds since unix epoch utc-aware
 

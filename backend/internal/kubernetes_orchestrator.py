@@ -7,7 +7,7 @@ import re
 import yaml
 import time
 
-import logging
+import logger
 from typing import Optional, List, Tuple
 from click import File
 from kubernetes import client, config
@@ -17,21 +17,21 @@ from kubernetes.client.models.v1_deployment import V1Deployment
 from kubernetes.client.models.v1_pod import V1Pod
 
 from backend.internal.models.orchestrator import Orchestrator  # Import the abstract base class
-
+logger.info = lambda message: print(message)
 from backend.internal.errors import OxnException, OrchestratorException, OrchestratorResourceNotFoundException
 
 class KubernetesOrchestrator(Orchestrator):
     def __init__(self, experiment_config=None):
-        logging.info("Initializing Kubernetes orchestrator")
+        logger.info("Initializing Kubernetes orchestrator")
         if experiment_config is None:
-            logging.error("No experiment configuration provided. Continue with empty configuration")
+            logger.error("No experiment configuration provided. Continue with empty configuration")
             experiment_config = {}
         self.experiment_config: dict = experiment_config
         config.load_incluster_config()
         self.kube_client = client.CoreV1Api()
         self.api_client = client.AppsV1Api()
 
-        logging.info("Loading all running resources in k8s cluster")
+        logger.info("Loading all running resources in k8s cluster")
         
         self.list_of_all_pods = self.kube_client.list_pod_for_all_namespaces(watch=False)
         #for i in self.list_of_all_pods.items:
@@ -54,9 +54,9 @@ class KubernetesOrchestrator(Orchestrator):
             namespace = service["namespace"]
             try:
                 service = self.kube_client.read_namespaced_service(service_name, namespace)
-                #logging.info(f"Service {service_name} in namespace {namespace} is running")
+                #logger.info(f"Service {service_name} in namespace {namespace} is running")
             except ApiException as e:
-                #logging.error(f"Service {service_name} in namespace {namespace} is not running")
+                #logger.error(f"Service {service_name} in namespace {namespace} is not running")
                 raise OxnException(
                     message=f"Service {service_name} in namespace {namespace} is not running but set as a required service",
                     explanation=str(e),
@@ -65,7 +65,7 @@ class KubernetesOrchestrator(Orchestrator):
             
     
     def orchestrate(self):
-        logging.info("orchestrate noop implementation")
+        logger.info("orchestrate noop implementation")
         pass
 
     def ready(self, expected_services: List[str] | None, timeout: int = 120) -> bool:
@@ -74,15 +74,15 @@ class KubernetesOrchestrator(Orchestrator):
         return self._check_required_services(expected_services)
 
     def teardown(self):
-        logging.info("teardown loop implementation")
+        logger.info("teardown loop implementation")
         pass
 
     def translate_compose_names(self, compose_names: List[str]):
-        logging.info("translate_compose_names noop implementation")
+        logger.info("translate_compose_names noop implementation")
         pass
 
     def translate_container_names(self, container_names: List[str]):
-        logging.info("translate_container_names noop implementation")
+        logger.info("translate_container_names noop implementation")
         pass
 
     def running_services(self) -> List[str]:
@@ -108,7 +108,7 @@ class KubernetesOrchestrator(Orchestrator):
             OrchestratorException: If an error occurs while executing the command
         
         """
-        #logging.info("execute_console_command noop implementation for service %s with command %s", service, command)
+        #logger.info("execute_console_command noop implementation for service %s with command %s", service, command)
 
         # Get all pods with label app.kubernetes.io/name=service
         pods = self.kube_client.list_namespaced_pod(namespace=namespace, label_selector=f"{label_selector}={label}")
@@ -128,7 +128,7 @@ class KubernetesOrchestrator(Orchestrator):
                 
                 container = None
                 if pod.spec.containers and pod.spec.containers.__len__() > 1:
-                    logging.warning(f"Pod {pod.metadata.name} in namespace {label} has more than one container. Using the first container to execute the command. (Container: {pod.spec.containers[0].name})")
+                    logger.warning(f"Pod {pod.metadata.name} in namespace {label} has more than one container. Using the first container to execute the command. (Container: {pod.spec.containers[0].name})")
                     container = pod.spec.containers[0]
                 else:
                     container = pod.spec.containers[0]
@@ -161,7 +161,7 @@ class KubernetesOrchestrator(Orchestrator):
                 
                 return exit_status, command_output
                 
-                logging.info(response)
+                logger.info(response)
             except ApiException as e:
                 raise OrchestratorException(
                     message=f"Error while executing command {command} on pod {pod.metadata.name} in namespace {label}: {e.body}",
@@ -259,7 +259,7 @@ class KubernetesOrchestrator(Orchestrator):
         cluster_ip = service.spec.cluster_ip
         
         if cluster_ip is None or cluster_ip == "None":  
-            logging.info(f"Service {name} in namespace {namespace} has no cluster IP. Falling back to pod IP by selecting first pod and receiving its IP")
+            logger.info(f"Service {name} in namespace {namespace} has no cluster IP. Falling back to pod IP by selecting first pod and receiving its IP")
             # fall back to pod IP
             name_label_of_service = service.metadata.labels["app.kubernetes.io/name"]
             pods = self.kube_client.list_namespaced_pod(namespace=namespace, label_selector=f"app.kubernetes.io/name={name_label_of_service}")
@@ -484,7 +484,7 @@ class KubernetesOrchestrator(Orchestrator):
                 )
                 return response
             except ApiException as e:
-                logging.error(f"Error while updating deployment {deployment.metadata.name} in namespace {deployment.metadata.namespace}: {e.body}. Waiting for 1 second and retrying. Retry {i}")
+                logger.error(f"Error while updating deployment {deployment.metadata.name} in namespace {deployment.metadata.namespace}: {e.body}. Waiting for 1 second and retrying. Retry {i}")
                 time.sleep(1)
                 
         raise OrchestratorException(
@@ -592,7 +592,7 @@ class KubernetesOrchestrator(Orchestrator):
         
         try:
             self.kube_client.patch_namespaced_config_map(name="astronomy-shop-prometheus-server", namespace="system-under-evaluation", body=configmap)
-            logging.info(f"ConfigMap astronomy-shop-prometheus-server updated successfully.")
+            logger.info(f"ConfigMap astronomy-shop-prometheus-server updated successfully.")
         except ApiException as e:
             raise OrchestratorException(
                 message=f"Error while updating ConfigMap astronomy-shop-prometheus-server in namespace system-under-evaluation: {e.body}",
@@ -738,7 +738,7 @@ class KubernetesOrchestrator(Orchestrator):
         
         try:
             self.kube_client.patch_namespaced_config_map(name="astronomy-shop-prometheus-server", namespace="system-under-evaluation", body=configmap)
-            logging.info("ConfigMap astronomy-shop-prometheus-server alert rules updated successfully.")
+            logger.info("ConfigMap astronomy-shop-prometheus-server alert rules updated successfully.")
         except ApiException as e:
             raise OrchestratorException(
                 message=f"Error while updating ConfigMap astronomy-shop-prometheus-server in namespace system-under-evaluation: {e.body}",
@@ -828,7 +828,7 @@ class KubernetesOrchestrator(Orchestrator):
         
         try:
             self.kube_client.patch_namespaced_config_map(name=configmap_name, namespace="system-under-evaluation", body=configmap)
-            logging.info(f"ConfigMap {configmap_name} updated successfully.")
+            logger.info(f"ConfigMap {configmap_name} updated successfully.")
         except ApiException as e:
             raise OrchestratorException(
                 message=f"Error while updating ConfigMap {configmap_name} in namespace system-under-evaluation: {e.body}",
@@ -868,15 +868,15 @@ class KubernetesOrchestrator(Orchestrator):
         
         for pod in pods.items:
             self.kill_pod(pod)
-            logging.info(f"Pod {pod.metadata.name} in namespace {deployment.metadata.namespace} has been killed because of restart")
+            logger.info(f"Pod {pod.metadata.name} in namespace {deployment.metadata.namespace} has been killed because of restart")
             
         time.sleep(4)
         for i in range(0, 10):
             if self.is_deployment_ready(deployment):
                 break
             time.sleep(i * 2)
-            logging.info(f"Waiting for deployment {deployment.metadata.name} to be ready after restart. Retry {i}")
+            logger.info(f"Waiting for deployment {deployment.metadata.name} to be ready after restart. Retry {i}")
             
-        logging.info(f"Deployment {deployment.metadata.name} is ready after restart")
+        logger.info(f"Deployment {deployment.metadata.name} is ready after restart")
             
         
