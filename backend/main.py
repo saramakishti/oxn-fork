@@ -104,7 +104,7 @@ async def get_experiment_status(experiment_id: str):
         raise HTTPException(status_code=404, detail="Experiment not found")
     return experiment
 
-'''gets the resulting data for the given experiment id and respone variable id and the file format. If file is found it will be returned. Else a 404 not found will be given.
+""" '''gets the resulting data for the given experiment id and respone variable id and the file format. If file is found it will be returned. Else a 404 not found will be given.
 Supported file types are json and csv. '''
 @app.get("/experiments/{experiment_id}/data/{response_name}/", response_class=None)
 async def get_experiment_data(
@@ -129,7 +129,7 @@ async def list_experiment_files(
     if res is not None:
         return {"response_names": res[0], "response_file_suffixes": res[1]}
     else:
-        return {"response_names": [], "response_file_suffixes": []}
+        return {"response_names": [], "response_file_suffixes": []} """
 
 @app.get("/experiments/{experiment_id}/benchmark")
 async def get_benchmark_data(experiment_id: str):
@@ -139,6 +139,17 @@ async def get_benchmark_data(experiment_id: str):
     """
     # TODO: Implement CSV file download response
     pass
+
+@app.get("/experiments/{experiment_id}/report")
+async def get_experiment_report(experiment_id: str):
+    """
+    Get experiment report for experiment.
+    Returns HTML file with experiment results.
+    """
+    report = experiment_manager.get_experiment_report(experiment_id)
+    if not report:
+        raise HTTPException(status_code=404, detail="Report not found")
+    return report
 
 # Additional Feature Endpoints
 @app.post("/experiments/batch")
