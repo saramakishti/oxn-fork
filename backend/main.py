@@ -13,7 +13,7 @@ from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
 
 from pydantic import BaseModel
 from datetime import datetime
-from internal.experiment_manager import ExperimentManager
+from backend.internal.experiment_manager import ExperimentManager
 from fastapi.responses import FileResponse
 
 
