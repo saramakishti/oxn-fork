@@ -30,10 +30,12 @@ class Engine:
     This class encapsulates all behavior needed to execute observability experiments.
     """
 
-    def __init__(self, configuration_path=None, report_path=None, out_path=None, out_formats=None, orchestrator_class=None, spec=None):
+    def __init__(self, configuration_path=None, report_path=None, out_path=None, out_formats=None, orchestrator_class=None, spec=None, config_filename=None):
         assert configuration_path is not None, "Configuration path must be specified"
         self.config = configuration_path
         """The path to the configuration file for this engine"""
+        self.config_filename = config_filename
+        """The filename of the configuration file for this engine"""
         self.spec = spec
         """The loaded experiment specification"""
         self.report_path = report_path

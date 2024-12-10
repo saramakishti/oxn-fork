@@ -105,7 +105,8 @@ class ExperimentManager:
                 out_path=out_path,
                 out_formats=[output_format],
                 orchestrator_class=orchestrator,
-                spec=experiment
+                spec=experiment,
+                config_filename=experiment_id
             )
 
             engine.run(runs=runs, orchestration_timeout=None, randomize=False, accounting=False)
