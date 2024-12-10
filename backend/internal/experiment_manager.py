@@ -27,52 +27,52 @@ class ExperimentManager:
 
     def create_experiment(self, name, config):
         """Create new experiment directory and config file"""
-        self.acquire_lock()
-        experiment_id = str(self.counter) + str(int(time.time()))
-        self.counter += 1
-        experiment_dir = self.experiments_dir / experiment_id
-        logger.info(f"Creating experiment: {name}")
-        logger.info(f"Experiment ID: {experiment_id}")
-        logger.info(f"Experiment Directory: {experiment_dir}")
-        experiment = {
-            'id': experiment_id,
-            'name': name,
-            'status': 'PENDING',
-            'created_at': datetime.now().isoformat(),
-            'started_at': None,
-            'completed_at': None,
-            'error_message': None,
-            'spec': config,
-            'paths': {
-                'data': str(experiment_dir / 'data'),
-                'benchmark': str(experiment_dir / 'benchmark'),
-                'report': str(experiment_dir / 'report')
+        if not self.acquire_lock():
+            logger.info("Lock already held, skipping experiment check")
+            return False
+        try:
+            experiment_id = str(self.counter) + str(int(time.time()))
+            self.counter += 1
+            experiment_dir = self.experiments_dir / experiment_id
+            logger.info(f"Creating experiment: {name}")
+            logger.info(f"Experiment ID: {experiment_id}")
+            logger.info(f"Experiment Directory: {experiment_dir}")
+            experiment = {
+                'id': experiment_id,
+                'name': name,
+                'status': 'PENDING',
+                'created_at': datetime.now().isoformat(),
+                'started_at': None,
+                'completed_at': None,
+                'error_message': None,
+                'spec': config,
+                'paths': {
+                    'data': str(experiment_dir / 'data'),
+                    'benchmark': str(experiment_dir / 'benchmark'),
+                    'report': str(experiment_dir / 'report')
+                }
             }
-        }
-        
-        # Create directories
-        experiment_dir.mkdir(parents=True)
-        (experiment_dir / 'data').mkdir()
-        (experiment_dir / 'benchmark').mkdir()
-        (experiment_dir / 'report').mkdir()
-        
-        # Save experiment config
-        with open(experiment_dir / 'experiment.json', 'w') as f:
-            json.dump(experiment, f, indent=2)
-        
-        self.release_lock()
+            
+            # Create directories
+            experiment_dir.mkdir(parents=True)
+            (experiment_dir / 'data').mkdir()
+            (experiment_dir / 'benchmark').mkdir()
+            (experiment_dir / 'report').mkdir()
+            
+            # Save experiment config
+            with open(experiment_dir / 'experiment.json', 'w') as f:
+                json.dump(experiment, f, indent=2)
+        finally:
+            self.release_lock()
         return experiment
 
     def get_experiment(self, experiment_id):
         """Get experiment config"""
-        self.acquire_lock()
         try:
             with open(self.experiments_dir / experiment_id / 'experiment.json') as f:
                 return json.load(f)
         except FileNotFoundError:
             return None
-        finally:
-            self.release_lock()
 
     def get_experiment_report(self, experiment_id):
         """Get experiment report"""
@@ -88,8 +88,6 @@ class ExperimentManager:
             logger.info("Lock already held, skipping experiment check")
             return False
         try:
-            if not self.experiment_exists(experiment_id):
-                raise HTTPException(status_code=404, detail="Experiment not found")
             logger.info(f"Changing experiment status to RUNNING")
             self.update_experiment(experiment_id, {'status': 'RUNNING'})
             experiment = self.get_experiment(experiment_id)['spec']
@@ -118,9 +116,6 @@ class ExperimentManager:
 
     def update_experiment(self, experiment_id, updates):
         """Update experiment config"""
-        if not self.acquire_lock():
-            logger.info("Lock already held, skipping experiment check")
-            return False
         try:
             experiment = self.get_experiment(experiment_id)
             if experiment:
@@ -130,8 +125,9 @@ class ExperimentManager:
                 return experiment
             else:
                 return None
-        finally:
-            self.release_lock()
+        except Exception as e:
+            logger.error(f"Error updating experiment: {e}")
+            return None
 
     def list_experiments(self):
         """List all experiments"""
