@@ -82,54 +82,56 @@ kubectl wait --for=condition=ready pod \
     -n system-under-evaluation \
     --timeout=300s
 
-echo "Copying kubeconfig and OXN source to control plane node..."
-CONTROL_PLANE_NODE=$(kubectl get nodes --selector=node-role.kubernetes.io/control-plane -o jsonpath='{.items[0].metadata.name}')
-OXN_SOURCE_DIR="${SCRIPT_DIR}/../.."
+if [ "$1" == "--hack" ]; then
+    echo "Copying kubeconfig and OXN source to control plane node..."
+    CONTROL_PLANE_NODE=$(kubectl get nodes --selector=node-role.kubernetes.io/control-plane -o jsonpath='{.items[0].metadata.name}')
+    OXN_SOURCE_DIR="${SCRIPT_DIR}/../.."
 
-# Create directories on control plane node and set permissions
-gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
-    sudo mkdir -p /opt/oxn ~/.kube
-'
+    # Create directories on control plane node and set permissions
+    gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
+        sudo mkdir -p /opt/oxn ~/.kube
+    '
 
-# Copy kubeconfig
-gcloud compute scp "${CLUSTER_NAME}.config" "${CONTROL_PLANE_NODE}:/tmp/kubeconfig"
-gcloud compute ssh "${CONTROL_PLANE_NODE}" --command="sudo mv /tmp/kubeconfig ~/.kube/config"
+    # Copy kubeconfig
+    gcloud compute scp "${CLUSTER_NAME}.config" "${CONTROL_PLANE_NODE}:/tmp/kubeconfig"
+    gcloud compute ssh "${CONTROL_PLANE_NODE}" --command="sudo mv /tmp/kubeconfig ~/.kube/config"
 
-# Copy OXN source files
-echo "Creating zip archive of source code..."
-(cd "${OXN_SOURCE_DIR}" && zip -r /tmp/oxn-source.zip ./* -x "k8s/scripts/.terraform/*" -x "venv/*")
-gcloud compute scp /tmp/oxn-source.zip "${CONTROL_PLANE_NODE}:/tmp/"
+    # Copy OXN source files
+    echo "Creating zip archive of source code..."
+    (cd "${OXN_SOURCE_DIR}" && zip -r /tmp/oxn-source.zip ./* -x "k8s/scripts/.terraform/*" -x "venv/*")
+    gcloud compute scp /tmp/oxn-source.zip "${CONTROL_PLANE_NODE}:/tmp/"
 
-# Install Python and OXN
-gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
-    # Install Python and requirements
-    sudo apt-get update
-    sudo apt-get install -y python3 python3-pip unzip
+    # Install Python and OXN
+    gcloud compute ssh "${CONTROL_PLANE_NODE}" --command='
+        # Install Python and requirements
+        sudo apt-get update
+        sudo apt-get install -y python3 python3-pip unzip
 
-    # Setup directories
-    sudo chown -R $(whoami):$(whoami) /opt/oxn
+        # Setup directories
+        sudo chown -R $(whoami):$(whoami) /opt/oxn
 
-    # Install virtualenv globally to avoid PATH issues
-    sudo pip3 install virtualenv
+        # Install virtualenv globally to avoid PATH issues
+        sudo pip3 install virtualenv
 
-    # Create virtualenv
-    cd /opt/oxn
-    python3 -m virtualenv venv
-    
-    # Extract OXN source
-    unzip -o -q /tmp/oxn-source.zip
-    rm /tmp/oxn-source.zip
-    
-    # Install OXN in virtualenv
-    source venv/bin/activate
-    pip3 install .
-    
-    # Verify installation
-    which oxn
-    oxn --help
-'
+        # Create virtualenv
+        cd /opt/oxn
+        python3 -m virtualenv venv
+        
+        # Extract OXN source
+        unzip -o -q /tmp/oxn-source.zip
+        rm /tmp/oxn-source.zip
+        
+        # Install OXN in virtualenv
+        source venv/bin/activate
+        pip3 install .
+        
+        # Verify installation
+        which oxn
+        oxn --help
+    '
 
-rm -f /tmp/oxn-source.zip
+    rm -f /tmp/oxn-source.zip
+fi
 
 echo "Installation complete!"
 echo "To run an experiment: ./run-experiment.sh <experiment-yaml-file> [additional oxn arguments]"

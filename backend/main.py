@@ -83,6 +83,7 @@ async def run_experiment(
     if not experiment_manager.acquire_lock():
         raise HTTPException(status_code=409, detail="Another experiment is currently running")
     
+    logger.info(f"Adding background task for experiment: {experiment_id}")
     background_tasks.add_task(
         experiment_manager.run_experiment,
         experiment_id,

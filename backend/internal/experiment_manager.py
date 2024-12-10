@@ -84,7 +84,9 @@ class ExperimentManager:
     
     def run_experiment(self, experiment_id, output_format, runs):
         """Run experiment"""
-        self.acquire_lock()
+        if not self.acquire_lock():
+            logger.info("Lock already held, skipping experiment check")
+            return False
         try:
             if not self.experiment_exists(experiment_id):
                 raise HTTPException(status_code=404, detail="Experiment not found")
@@ -111,37 +113,37 @@ class ExperimentManager:
     
     def experiment_exists(self, experiment_id):
         """Check if experiment exists"""
-        self.acquire_lock()
-        try:
-            return (self.experiments_dir / experiment_id / 'experiment.json').exists()
-        finally:
-            self.release_lock()
+        return (self.experiments_dir / experiment_id / 'experiment.json').exists()
+
 
     def update_experiment(self, experiment_id, updates):
         """Update experiment config"""
-        experiment = self.get_experiment(experiment_id)
-        if experiment:
-            experiment.update(updates)
-            with open(self.experiments_dir / experiment_id / 'experiment.json', 'w') as f:
-                json.dump(experiment, f, indent=2)
+        if not self.acquire_lock():
+            logger.info("Lock already held, skipping experiment check")
+            return False
+        try:
+            experiment = self.get_experiment(experiment_id)
+            if experiment:
+                experiment.update(updates)
+                with open(self.experiments_dir / experiment_id / 'experiment.json', 'w') as f:
+                    json.dump(experiment, f, indent=2)
                 return experiment
-        else:
-            return None
+            else:
+                return None
+        finally:
+            self.release_lock()
 
     def list_experiments(self):
         """List all experiments"""
-        self.acquire_lock()
-        try:
-            experiments = {}
-            for exp_dir in self.experiments_dir.iterdir():
-                if exp_dir.is_dir():
-                    try:
-                        with open(exp_dir / 'experiment.json') as f:
-                            experiments[exp_dir.name] = json.load(f)
-                    except FileNotFoundError:
-                        continue
-        finally:
-            self.release_lock()
+        experiments = {}
+        for exp_dir in self.experiments_dir.iterdir():
+            if exp_dir.is_dir():
+                try:
+                    with open(exp_dir / 'experiment.json') as f:
+                        experiments[exp_dir.name] = json.load(f)
+                except FileNotFoundError:
+                    continue
+
         return experiments
 
     def acquire_lock(self):
