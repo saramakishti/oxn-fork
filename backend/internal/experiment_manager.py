@@ -14,6 +14,9 @@ from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 
 logger = logging.getLogger(__name__)
 logger.info = lambda message: print(message)
+logger.error = lambda message: print(message)
+logger.warning = lambda message: print(message)
+logger.debug = lambda message: print(message)
 
 class ExperimentManager:
     def __init__(self, base_path):
@@ -108,6 +111,8 @@ class ExperimentManager:
             engine.run(runs=runs, orchestration_timeout=None, randomize=False, accounting=False)
         except Exception as e:
             logger.error(f"Error running experiment: {e}")
+            import traceback
+            logger.error(f"stacktrace: {traceback.format_exc()}")
             self.update_experiment(experiment_id, {'status': 'FAILED', 'error_message': str(e)})
         finally:
             self.release_lock()

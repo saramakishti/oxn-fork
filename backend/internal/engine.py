@@ -22,6 +22,7 @@ from backend.internal.errors import OxnException, OrchestrationException
 
 logger = logging.getLogger(__name__)
 logger.info = lambda message: print(message)
+logger.exception = lambda message: print(message)
 
 class Engine:
     """
