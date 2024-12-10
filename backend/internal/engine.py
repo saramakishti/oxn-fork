@@ -146,7 +146,6 @@ class Engine:
                 if self.out_formats and 'json' in self.out_formats:
                     write_json_data(
                         data=response.data,
-                        experiment_key=self.runner.config_filename,
                         run_key=self.runner.short_id,
                         response_key=response.name,
                         out_path=self.out_path,

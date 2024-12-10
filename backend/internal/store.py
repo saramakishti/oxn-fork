@@ -188,7 +188,7 @@ def list_all_dataframes():
     with pd.HDFStore(_get_storage_path()) as store:
         return store.keys(include="pandas")
 
-def write_json_data(data, experiment_key, run_key, response_key, out_path=None) -> None:
+def write_json_data(data, run_key, response_key, out_path=None) -> None:
     """Write data to a JSON file"""
     storage_dir = out_path if out_path else STORAGE_DIR
     Path(storage_dir).mkdir(parents=True, exist_ok=True)
@@ -196,7 +196,7 @@ def write_json_data(data, experiment_key, run_key, response_key, out_path=None) 
     if isinstance(data, pd.DataFrame):
         data = data.to_dict(orient='records')
         
-    filename = f"{experiment_key}_{run_key}_{response_key}.json"
+    filename = f"{run_key}_{response_key}.json"
     json_path = Path(storage_dir) / filename
     
     with open(json_path, 'x') as f:
