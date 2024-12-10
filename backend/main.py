@@ -1,3 +1,6 @@
+from gevent import monkey
+monkey.patch_all()
+
 from typing import Dict, List, Optional
 import logging
 uvicorn_logger_error = logging.getLogger("uvicorn.error")
