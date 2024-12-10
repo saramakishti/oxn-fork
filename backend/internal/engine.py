@@ -15,7 +15,6 @@ from backend.internal.docker_orchestration import DockerComposeOrchestrator
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 from backend.internal.report import Reporter
 from backend.internal.store import configure_output_path, write_dataframe, write_json_data
-from backend.internal.loadgen import LoadGenerator
 from backend.internal.locust_file_loadgenerator import LocustFileLoadgenerator
 from backend.internal.utils import utc_timestamp
 from backend.internal.errors import OxnException, OrchestrationException
