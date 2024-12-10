@@ -6,8 +6,7 @@ uvicorn_logger_access = logging.getLogger("uvicorn.access")
 uvicorn_logger_access.setLevel(logging.DEBUG)
 
 logger = logging.getLogger("uvicorn")
-logger.handlers = uvicorn_logger_error.handlers
-logger.setLevel(logging.DEBUG)
+logger.info = lambda message: print(message)
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
 
@@ -58,7 +57,6 @@ async def create_experiment(experiment: ExperimentCreate):
     Create a new experiment with configuration.
     Stores experiment metadata and creates necessary directories.
     """
-    print(f"PRINT Creating experiment: {experiment.name}")
     return experiment_manager.create_experiment(
         name=experiment.name,
         config=experiment.config
@@ -86,6 +84,37 @@ async def run_experiment(
     logger.info(f"Adding background task for experiment: {experiment_id}")
     background_tasks.add_task(
         experiment_manager.run_experiment,
+        experiment_id,
+        output_format=run_config.output_format,
+        runs=run_config.runs
+    )
+    
+    return {
+        "status": "accepted",
+        "message": "Experiment started successfully",
+        "experiment_id": experiment_id
+    }
+
+@app.post("/experiments/{experiment_id}/runsync", response_model=Dict)
+async def run_experiment_sync(
+    experiment_id: str,
+    run_config: ExperimentRun,
+):
+    """
+    Start experiment execution asynchronously.
+    - Validates experiment exists
+    - Checks if another experiment is running
+    - Starts execution in background
+    - Returns immediately with acceptance status
+    """
+    if not experiment_manager.experiment_exists(experiment_id):
+        raise HTTPException(status_code=404, detail="Experiment not found")
+        
+    if not experiment_manager.acquire_lock():
+        raise HTTPException(status_code=409, detail="Another experiment is currently running")
+    
+    logger.info(f"Running experiment synchronously: {experiment_id}")
+    experiment_manager.run_experiment(
         experiment_id,
         output_format=run_config.output_format,
         runs=run_config.runs
