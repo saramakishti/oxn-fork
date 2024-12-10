@@ -173,7 +173,7 @@ class ExperimentRunner:
                 action=action, params=params, name=key, orchestrator=self.orchestrator
             )
             logger.debug("Successfully built treatment %s", self.treatments[key])
-        logger.info("Built %s treatments: %s", len(self.treatments), self.treatments.keys())
+        logger.info(f"Built {len(self.treatments)} treatments: {self.treatments.keys()}")
 
     def _build_treatment(self, action, params, name, orchestrator) -> Treatment:
         """Build a single treatment from a description"""
