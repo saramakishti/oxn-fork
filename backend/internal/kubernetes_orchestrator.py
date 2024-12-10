@@ -19,6 +19,10 @@ from kubernetes.client.models.v1_pod import V1Pod
 from backend.internal.models.orchestrator import Orchestrator  # Import the abstract base class
 logger = logging.getLogger(__name__)
 logger.info = lambda message: print(message)
+logger.error = lambda message: print(message)
+logger.warning = lambda message: print(message)
+logger.debug = lambda message: print(message)
+
 from backend.internal.errors import OxnException, OrchestratorException, OrchestratorResourceNotFoundException
 
 class KubernetesOrchestrator(Orchestrator):
