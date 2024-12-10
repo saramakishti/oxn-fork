@@ -55,6 +55,7 @@ class Engine:
         """Status of the load generator"""
         self.sue_running = False
         """Status of the sue"""
+        self.additional_treatments = []
         self.status = 'PENDING'
         self.error_message = None
         self.started_at = None
