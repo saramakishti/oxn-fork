@@ -155,9 +155,9 @@ class ExperimentRunner:
     def _compute_hash(self) -> None:
         """Hash the config filename to uniquely identify experiments"""
         if self.config_filename:
-            self.hash = self.config_filename.encode("utf-8")
-            self.hash = hashlib.sha256(usedforsecurity=False)
-            self.hash = self.hash.hexdigest()
+            hasher = hashlib.sha256(usedforsecurity=False)
+            hasher.update(str(self.config_filename).encode('utf-8'))
+            self.hash = hasher.hexdigest()
 
     def _build_treatments(self) -> None:
         """Build a representation of treatments defined in config"""
