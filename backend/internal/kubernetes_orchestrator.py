@@ -28,24 +28,35 @@ class KubernetesOrchestrator(Orchestrator):
             logger.error("No experiment configuration provided. Continue with empty configuration")
             experiment_config = {}
         self.experiment_config: dict = experiment_config
-        config.load_incluster_config()
-        self.kube_client = client.CoreV1Api()
-        self.api_client = client.AppsV1Api()
-
-        logger.info("Loading all running resources in k8s cluster")
         
-        self.list_of_all_pods = self.kube_client.list_pod_for_all_namespaces(watch=False)
-        #for i in self.list_of_all_pods.items:
-            #print("%s\t%s\t%s" % (i.status.pod_ip, i.metadata.namespace, i.metadata.name))
-        pass
+        import sys
+        sys.setrecursionlimit(10000) 
+        
+        try:
+            config.load_incluster_config()
+            self.kube_client = client.CoreV1Api()
+            self.api_client = client.AppsV1Api()
 
-        self.list_of_all_services = self.kube_client.list_service_for_all_namespaces(watch=False)
-        #for i in self.list_of_all_services.items:
-            #print("%s\t%s" % (i.metadata.namespace, i.metadata.name))
+            logger.info("Loading all running resources in k8s cluster")
+            
+            
+            try:
+                self.list_of_all_pods = self.kube_client.list_pod_for_all_namespaces(watch=False)
+                self.list_of_all_services = self.kube_client.list_service_for_all_namespaces(watch=False)
+            except Exception as e:
+                logger.error(f"Error loading cluster resources: {str(e)}")
+                #  fallback
+                self.list_of_all_pods = []
+                self.list_of_all_services = []
 
-        """Check if all of experiment_config.sue.required services are running"""
-        self.required_services = self.experiment_config["experiment"]["sue"]["required"]
-        #self._check_required_services(self.required_services)
+            self.required_services = self.experiment_config.get("experiment", {}).get("sue", {}).get("required", [])
+            
+        except Exception as e:
+            logger.error(f"Error initializing Kubernetes orchestrator: {str(e)}")
+            raise OrchestratorException(
+                message="Failed to initialize Kubernetes orchestrator",
+                explanation=str(e)
+            )
             
     
     def _check_required_services(self, required_services) -> bool:

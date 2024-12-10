@@ -106,6 +106,9 @@ class ExperimentManager:
             )
 
             engine.run(runs=runs, orchestration_timeout=None, randomize=False, accounting=False)
+        except Exception as e:
+            logger.error(f"Error running experiment: {e}")
+            self.update_experiment(experiment_id, {'status': 'FAILED', 'error_message': str(e)})
         finally:
             self.release_lock()
     
