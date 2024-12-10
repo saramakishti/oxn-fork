@@ -12,6 +12,7 @@ logger = logging.getLogger("uvicorn")
 logger.info = lambda message: print(message)
 
 from fastapi import FastAPI, BackgroundTasks, HTTPException, Query
+from fastapi.middleware.cors import CORSMiddleware
 
 from pydantic import BaseModel
 from datetime import datetime
@@ -22,6 +23,16 @@ from fastapi.responses import FileResponse
 
 
 app = FastAPI(title="OXN API", version="1.0.0")
+
+# CORS Middleware hinzufügen
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=["http://localhost:3000"],  # Frontend URL
+    allow_credentials=True,
+    allow_methods=["*"],  # Alle HTTP-Methoden erlauben
+    allow_headers=["*"],  # Alle Headers erlauben
+)
+
 """ @app.on_event("startup")
 async def startup_event():
     logger = logging.getLogger("uvicorn.access")
