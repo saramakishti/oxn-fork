@@ -51,6 +51,10 @@ opentelemetry-collector:
             - probabilistic_sampler
 prometheus:
   server:
+    global:
+      scrape_interval: 5s
+      scrape_timeout: 5s
+      evaluation_interval: 5s
     extraArgs:
       web.enable-lifecycle: ""
     persistentVolume:
@@ -144,6 +148,56 @@ prometheus:
               regex: (.+)
     alerting_rules.yml:
       groups:
+        # Aggressive HTTP Latency Detection
+        - name: astronomy-shop-rapid-http-latency-alerts
+          rules:
+            - alert: ImmediateHighHTTPLatency
+              expr: |
+                histogram_quantile(0.95, 
+                  sum(rate(http_server_duration_milliseconds_bucket{
+                    job=~"opentelemetry-demo/.*", 
+                    http_status_code="200",
+                    le!="infinity"
+                  }[90s])) by (job, http_method, http_flavor, net_host_name, le)
+                ) > 300
+              for: 10s
+              labels:
+                severity: critical
+                detection: rapid
+                team: observability
+                runbook: latency-immediate-response
+
+        # Ultra-Sensitive RPC Latency Detection
+        - name: astronomy-shop-rapid-rpc-latency-alerts
+          rules:
+            - alert: ImmediateHighRPCLatency
+              expr: |
+                histogram_quantile(0.95, 
+                  sum(rate(rpc_server_duration_milliseconds_bucket{
+                    job=~"opentelemetry-demo/.*", 
+                    rpc_grpc_status_code="0",
+                    le!="infinity"
+                  }[90s])) by (job, rpc_method, rpc_service, le)
+                ) > 300
+              for: 10s
+              labels:
+                severity: critical
+                detection: rapid
+                team: observability
+                runbook: rpc-latency-immediate-response
+
+        # Critical Services Specific RPC Latency
+        - name: astronomy-shop-critical-service-rpc-latency
+          rules:
+            - alert: CriticalServiceRPCLatencySpike
+              expr: |
+                histogram_quantile(0.95, sum by (job, rpc_method, rpc_service, le) (rate(rpc_server_duration_milliseconds_bucket{job=~"opentelemetry-demo/(checkoutservice|adservice|productcatalogservice)",le!="infinity",rpc_grpc_status_code="0"}[90s]))) >300
+              for: 10s
+              labels:
+                severity: critical
+                detection: rapid
+                team: platform
+                runbook: critical-service-rpc-latency
         - name: KubestateExporter
 
           rules:
@@ -311,7 +365,7 @@ prometheus:
 
             - alert: KubernetesPodNotHealthy
               expr: 'sum by (namespace, pod) (kube_pod_status_phase{phase=~"Pending|Unknown|Failed"}) > 0'
-              for: 15m
+              for: 1m
               labels:
                 severity: critical
               annotations:

@@ -1,13 +1,15 @@
 import argparse
 import requests
-import matplotlib.pyplot as plt
-import pandas as pd
 from datetime import datetime, timedelta
+import time
 import subprocess
 import sys
 import signal
 import logging
 from typing import Dict, List, Tuple
+from collections import defaultdict
+import json
+from pathlib import Path
 
 # Configure logging
 logging.basicConfig(
@@ -18,12 +20,6 @@ logger = logging.getLogger(__name__)
 
 # Configuration
 PROMETHEUS_BASE_URL = "http://localhost:9090/api/v1"
-SEVERITY_COLORS = {
-    'critical': 'red',
-    'warning': 'orange',
-    'info': 'blue',
-    'none': 'gray'
-}
 
 class PortForwarder:
     def __init__(self):
@@ -45,6 +41,7 @@ class PortForwarder:
             
             self.processes = [prometheus_forward]
             # Give port-forward time to establish
+            time.sleep(1)
             logger.info("Setting up port-forward...")
             return True
             
@@ -66,39 +63,24 @@ class PortForwarder:
                     pass
         self.processes = []
 
-def get_alert_rules() -> List[Dict]:
-    """Get all configured alert rules from Prometheus"""
-    try:
-        response = requests.get(f"{PROMETHEUS_BASE_URL}/rules", timeout=10)
-        response.raise_for_status()
-        
-        rules_data = response.json()
-        alert_rules = []
-        
-        for group in rules_data.get('data', {}).get('groups', []):
-            for rule in group.get('rules', []):
-                if rule.get('type') == 'alerting':
-                    alert_rules.append({
-                        'name': rule.get('name'),
-                        'severity': rule.get('labels', {}).get('severity', 'none')
-                    })
-        
-        return alert_rules
-    
-    except requests.exceptions.RequestException as e:
-        logger.error(f"Failed to fetch alert rules: {e}")
-        return []
+def save_prometheus_response(response_data: Dict, timestamp: str) -> None:
+    """Save raw Prometheus response to a JSON file"""
+    filename = f"prometheus-alerts-{timestamp}.json"
+    with open(filename, 'w') as f:
+        json.dump(response_data, f, indent=2)
+    logger.info(f"Saved raw Prometheus response to {filename}")
 
-def get_alert_history(start_time: datetime, end_time: datetime) -> pd.DataFrame:
-    """Get alert firing history from Prometheus"""
+def get_alert_transitions(start_time: datetime, end_time: datetime, download: bool = False) -> List[Dict]:
+    """Get alert firing history with focus on state transitions"""
     try:
         params = {
             'query': 'ALERTS',
             'start': start_time.timestamp(),
             'end': end_time.timestamp(),
-            'step': '1m'  # 1 minute resolution
+            'step': '15s'
         }
-        
+        logger.info(f"Querying Prometheus at {PROMETHEUS_BASE_URL}")
+        logger.info(f"Time range: {start_time} to {end_time}")
         response = requests.get(
             f"{PROMETHEUS_BASE_URL}/query_range",
             params=params,
@@ -106,119 +88,108 @@ def get_alert_history(start_time: datetime, end_time: datetime) -> pd.DataFrame:
         )
         response.raise_for_status()
         
-        # Convert response to DataFrame
-        data = response.json()
-        alert_data = []
+        response_data = response.json()
+        logger.info(f"Found {len(response_data.get('data', {}).get('result', []))} alert series")
+        # Save raw response if requested
+        if download:
+            timestamp = datetime.now().strftime('%Y%m%d-%H%M%S')
+            save_prometheus_response(response_data, timestamp)
         
-        for result in data.get('data', {}).get('result', []):
+        # Track alert states and transitions
+        alert_states = defaultdict(lambda: {'active': False, 'transitions': []})
+        
+        for result in response_data.get('data', {}).get('result', []):
             metric = result['metric']
-            values = result['values']
+            alert_name = metric.get('alertname', 'unknown')
+            severity = metric.get('severity', 'none')
             
-            for timestamp, value in values:
-                if float(value) > 0:  # Alert is firing
-                    alert_data.append({
-                        'timestamp': pd.to_datetime(timestamp, unit='s'),
-                        'alertname': metric.get('alertname'),
-                        'severity': metric.get('severity', 'none')
+            last_state = False
+            for timestamp, value in result['values']:
+                current_state = float(value) > 0
+                
+                # Detect state transition
+                if current_state != last_state:
+                    time = datetime.fromtimestamp(timestamp)
+                    alert_states[alert_name]['transitions'].append({
+                        'time': time,
+                        'state': 'firing' if current_state else 'resolved',
+                        'severity': severity
                     })
+                last_state = current_state
         
-        return pd.DataFrame(alert_data)
+        return alert_states
     
     except requests.exceptions.RequestException as e:
         logger.error(f"Failed to fetch alert history: {e}")
-        return pd.DataFrame()
+        return {}
 
-def create_timeline(
-    alert_data: pd.DataFrame,
-    start_time: datetime,
-    end_time: datetime,
-    output_file: str = None
-):
-    """Create timeline visualization of alerts"""
-    if alert_data.empty:
-        logger.error("No alert data to visualize")
+def display_alert_timeline(alert_states: Dict):
+    """Display alert transitions in chronological order, grouped by timestamp and alert name"""
+    if not alert_states:
+        print("No alert data available")
         return
+
+    # Group transitions by timestamp
+    grouped_transitions = defaultdict(list)
+    for alert_name, data in alert_states.items():
+        for transition in data['transitions']:
+            time_key = transition['time'].strftime('%Y-%m-%d %H:%M:%S')
+            grouped_transitions[time_key].append({
+                'alert': alert_name,
+                'state': transition['state'],
+                'severity': transition['severity']
+            })
     
-    # Setup the plot
-    plt.figure(figsize=(15, 8))
+    print("\nAlert Timeline:")
+    print("=" * 100)
     
-    # Get unique alert names
-    alert_names = alert_data['alertname'].unique()
-    
-    # Create timeline bars for each alert
-    for idx, alert_name in enumerate(alert_names):
-        alert_instances = alert_data[alert_data['alertname'] == alert_name]
+    # Display grouped transitions
+    for time_str in sorted(grouped_transitions.keys()):
+        transitions = grouped_transitions[time_str]
         
-        for _, instance in alert_instances.iterrows():
-            severity = instance['severity']
-            color = SEVERITY_COLORS.get(severity, 'gray')
+        # Group by state and alert name
+        firing = defaultdict(list)
+        resolved = defaultdict(list)
+        
+        for t in transitions:
+            if t['state'] == 'firing':
+                firing[t['alert']].append(t['severity'])
+            else:
+                resolved[t['alert']].append(t['severity'])
+        
+        if firing:
+            alerts = [f"{alert}[{severity[0].upper()}] (×{len(severity)})" 
+                     for alert, severity in firing.items()]
+            print(f"{time_str} 🔴 Firing: {', '.join(alerts)}")
             
-            plt.hlines(
-                y=idx,
-                xmin=instance['timestamp'],
-                xmax=instance['timestamp'] + pd.Timedelta(minutes=1),
-                color=color,
-                linewidth=10
-            )
+        if resolved:
+            alerts = [f"{alert} (×{len(severities)})" 
+                     for alert, severities in resolved.items()]
+            print(f"{time_str} ✅ Resolved: {', '.join(alerts)}")
     
-    # Customize the plot
-    plt.yticks(range(len(alert_names)), alert_names)
-    plt.xlabel('Time')
-    plt.ylabel('Alert Name')
-    plt.title('Alert Timeline')
-    plt.grid(True, axis='x', alpha=0.3)
-    
-    # Add legend
-    legend_elements = [
-        plt.Line2D([0], [0], color=color, label=severity, linewidth=4)
-        for severity, color in SEVERITY_COLORS.items()
-    ]
-    plt.legend(handles=legend_elements, loc='upper right')
-    
-    # Rotate x-axis labels for better readability
-    plt.xticks(rotation=45)
-    
-    # Adjust layout
-    plt.tight_layout()
-    
-    # Save or display
-    if output_file:
-        plt.savefig(output_file)
-        logger.info(f"Saved visualization to {output_file}")
-    else:
-        plt.show()
+    print("=" * 100)
 
 def main():
-    parser = argparse.ArgumentParser(description='Visualize Prometheus alert history')
+    parser = argparse.ArgumentParser(description='Display Prometheus alert history')
     parser.add_argument('--hours', type=int, default=24,
                       help='Number of hours of history to show (default: 24)')
-    parser.add_argument('--output', type=str,
-                      help='Output file path (default: display plot)')
+    parser.add_argument('--download', action='store_true',
+                      help='Download raw Prometheus response to a JSON file')
     args = parser.parse_args()
     
-    # Calculate time range
     end_time = datetime.now()
     start_time = end_time - timedelta(hours=args.hours)
     
-    # Setup port-forward
     forwarder = PortForwarder()
     if not forwarder.start():
         sys.exit(1)
     
     try:
-        # Get alert rules and history
-        logger.info("Fetching alert rules...")
-        alert_rules = get_alert_rules()
-        
         logger.info("Fetching alert history...")
-        alert_data = get_alert_history(start_time, end_time)
-        
-        # Create visualization
-        logger.info("Creating visualization...")
-        create_timeline(alert_data, start_time, end_time, args.output)
+        alert_states = get_alert_transitions(start_time, end_time, download=args.download)
+        display_alert_timeline(alert_states)
         
     finally:
-        logger.info("Cleaning up port-forward...")
         forwarder.cleanup()
 
 if __name__ == "__main__":
