@@ -38,6 +38,7 @@ export default function ParsedContentDisplay({
       if (response.status === 200) {
         setIsSavedFile(true);
         setExperimentId(response.data.id);
+        console.log("Backend response.data with 200 ok : ", response.data)  
       }
     } catch (error) {
       console.error('Error during experiment save operation:', error);
@@ -51,7 +52,7 @@ export default function ParsedContentDisplay({
      if(experimentId){
        axios({
          method: 'post',
-         url: `http://localhost:8000/experiments/{experiment_id}/runsync`,
+         url: `http://localhost:8000/experiments/${experimentId}/runsync`,
        });
      }
   }
@@ -79,7 +80,7 @@ export default function ParsedContentDisplay({
         </div>
       </div>
 
-      <div className="flex justify-between my-2">
+      <div className="flex justify-end gap-2 my-2 w-full">
         <Button disabled={isSavedFile} onClick={handleFileSave} variant="outline">
           <Save />
           {isSavedFile ? 'File saved!' : 'Save file'}
