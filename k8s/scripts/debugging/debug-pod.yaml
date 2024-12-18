@@ -1,0 +1,17 @@
+apiVersion: v1
+kind: Pod
+metadata:
+  name: volume-debug
+  namespace: oxn
+spec:
+  containers:
+  - name: debug
+    image: busybox
+    command: ['sleep', '3600']
+    volumeMounts:
+    - name: backend-storage
+      mountPath: /mnt/data
+  volumes:
+  - name: backend-storage
+    persistentVolumeClaim:
+      claimName: oxn-platform-backend-pvc

@@ -6,7 +6,7 @@ Connection: Called by main.py and Engine to compile and save experiment results.
 Handle the generation of experiment reports"""
 import datetime
 import uuid
-from typing import Tuple, Union
+from typing import Tuple, Union, TypedDict, Dict, NotRequired
 
 import locust.stats
 import yaml
@@ -62,7 +62,7 @@ class Reporter:
             nan_policy="omit",
         )
         return str(ttest_result[0]), str(ttest_result[1]), "welch t-test"
-
+    # This approach could be refactored into pure functions that just return the data.
     def gather_interaction(
         self,
         experiment: ExperimentRunner,
@@ -81,16 +81,16 @@ class Reporter:
             else f"{response.name}.duration"
         )
         store_key = construct_key(
-            experiment_key=experiment.config_filename,
+            experiment_key=experiment.experiment_id,
             run_key=experiment.short_id,
             response_key=response.name,
         )
-        statistic, pvalue, test_name = self.compute_welch_ttest(
-            dataframe=response.data,
-            label="NoTreatment",
-            label_column=treatment.name,
-            value_column=value_column,
-        )
+        #statistic, pvalue, test_name = self.compute_welch_ttest(
+        #    dataframe=response.data,
+        #    label="NoTreatment",
+        #    label_column=treatment.name,
+        #    value_column=value_column,
+        #)
         self._add_interaction_data(
             treatment_name=treatment.name,
             treatment_type=treatment.treatment_type,
@@ -100,9 +100,9 @@ class Reporter:
             response_start=response.start,
             response_end=response.end,
             response_name=display_response_name,
-            p_value=pvalue,
-            test_statistic=statistic,
-            test_performed=test_name,
+            #p_value=pvalue,
+            #test_statistic=statistic,
+            #test_performed=test_name,
             store_key=store_key,
         )
 
@@ -116,9 +116,9 @@ class Reporter:
         response_type: str,
         response_start: int,
         response_end: int,
-        p_value: str,
-        test_statistic: str,
-        test_performed: str,
+        #p_value: str,
+        #test_statistic: str,
+        #test_performed: str,
         store_key: str,
     ) -> None:
         """Populate the interaction dict with interaction data"""
@@ -136,9 +136,9 @@ class Reporter:
                 "response_start": humanized_response_start,
                 "response_end": humanized_response_end,
                 "response_type": response_type,
-                "p_value": p_value,
-                "test_statistic": test_statistic,
-                "test_performed": test_performed,
+                #"p_value": p_value,
+                #"test_statistic": test_statistic,
+                #"test_performed": test_performed,
                 "store_key": store_key,
             }
         )
@@ -232,3 +232,56 @@ class Reporter:
         with open(self.report_path + self.report_file_name , "w+") as fp:
             contents = yaml.dump(self.report_data, sort_keys=False)
             fp.write(contents)
+
+    def get_report_data(self):
+        return self.report_data
+
+
+
+class InteractionData(TypedDict):
+    treatment_name: str          # e.g., "empty_treatment"
+    treatment_start: str         # e.g., "2024-11-17 15:10:56.143224"
+    treatment_end: str
+    treatment_type: str         # e.g., "EmptyTreatment"
+    response_name: str          # e.g., "frontend_traces.duration"
+    response_start: str
+    response_end: str
+    response_type: str          # e.g., "TraceResponseVariable"
+    store_key: str             # e.g., "/tmp/latest.yml/6213b211/frontend_traces"
+
+class TaskDetails(TypedDict):
+    url: str
+    verb: str
+    requests: int
+    failures: int
+    fail_ratio: float
+    sum_response_time: float
+    min_response_time: float
+    max_response_time: float
+    avg_response_time: float
+    median_response_time: float
+
+class LoadgenData(TypedDict):
+    loadgen_start_time: str
+    loadgen_end_time: str
+    loadgen_total_requests: int
+    loadgen_total_failures: int
+    task_details: Dict[str, TaskDetails]  # Keys are random IDs like "f620772fe02b4bad"
+
+class AccountingData(TypedDict):
+    cpu_seconds: float
+    number_of_cpus: int
+
+class RunData(TypedDict):
+    interactions: Dict[str, InteractionData]  # Keys are "interaction_0", "interaction_1", etc.
+    loadgen: NotRequired[LoadgenData]
+    accounting: NotRequired[Dict[str, AccountingData]]
+
+class ReportContent(TypedDict):
+    runs: Dict[str, RunData]  # Keys are run IDs like "6213b211"
+    experiment_start: NotRequired[str]  # Optional timestamp
+    experiment_end: NotRequired[str]    # Optional timestamp
+    experiment_key: NotRequired[str]    # Optional experiment identifier
+
+class ReportData(TypedDict):
+    report: ReportContent

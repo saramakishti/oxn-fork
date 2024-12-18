@@ -1,0 +1,4 @@
+replicas: 1
+image:
+  repository: luccadibenedetto/oxn-dev
+  tag: latest 

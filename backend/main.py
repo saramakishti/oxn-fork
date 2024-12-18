@@ -17,7 +17,7 @@ from fastapi.middleware.cors import CORSMiddleware
 from pydantic import BaseModel
 from datetime import datetime
 from backend.internal.experiment_manager import ExperimentManager
-from fastapi.responses import FileResponse
+from fastapi.responses import FileResponse, StreamingResponse
 
 
 
@@ -54,7 +54,7 @@ class ExperimentCreate(BaseModel):
 
 class ExperimentRun(BaseModel):
     runs: int = 1
-    output_format: str = "json"  # or csv
+    output_formats: List[str] = ["json"]  # or csv
 
 class ExperimentStatus(BaseModel):
     id: str
@@ -96,7 +96,7 @@ async def run_experiment(
     background_tasks.add_task(
         experiment_manager.run_experiment,
         experiment_id,
-        output_format=run_config.output_format,
+        output_formats=run_config.output_formats,
         runs=run_config.runs
     )
     
@@ -125,7 +125,7 @@ async def run_experiment_sync(
     logger.info(f"Running experiment synchronously: {experiment_id}")
     experiment_manager.run_experiment(
         experiment_id,
-        output_format=run_config.output_format,
+        output_formats=run_config.output_formats,
         runs=run_config.runs
     )
     
@@ -134,6 +134,11 @@ async def run_experiment_sync(
         "message": "Experiment started successfully",
         "experiment_id": experiment_id
     }
+
+@app.get("/experiments/{experiment_id}/data")
+def get_experiment_data(experiment_id: str):
+    """Get experiment data as zip file"""
+    return FileResponse(experiment_manager.zip_experiment_data(experiment_id))
 
 @app.get("/experiments/{experiment_id}/status", response_model=ExperimentStatus)
 async def get_experiment_status(experiment_id: str):

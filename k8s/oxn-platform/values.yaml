@@ -1,2 +1,8 @@
 global:
   namespace: oxn
+
+backend-chart:
+  enabled: true
+
+backend-dev-chart:
+  enabled: false
