@@ -4,6 +4,7 @@ import { Cable, Save, Trash } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Button } from "../ui/button";
+import axios from "axios";
 
 interface ParsedContentDisplayProps {
   fileName: string;
@@ -23,26 +24,37 @@ export default function ParsedContentDisplay({
   const [experimentId, setExperimentId] = React.useState(null);
 
 
-  const handleFileSave = () => {
-    setIsSavedFile(true);
-    // axios({
-    //   method: 'post',
-    //   url: '/experiments',
-    //   data: {
-    //     file: parsedContent
-    //   }
-    // });
+  const handleFileSave = async () => {
+    try {
+      const response = await axios({
+        method: 'post',
+        url: 'http://localhost:8000/experiments',
+        data: {
+          name: 'testexperiment',
+          config: parsedContent
+        }
+      });
+      
+      if (response.status === 200) {
+        setIsSavedFile(true);
+        setExperimentId(response.data.id);
+        console.log("Backend response.data with 200 ok : ", response.data)  
+      }
+    } catch (error) {
+      console.error('Error during experiment save operation:', error);
+      // Optional: Add error state or show error message to user
+    }
   }
 
   const handleStartExperiment = () => {
     alert('Experiment is starting...')
     handleDialogClose();
-    // if(experimentId){
-    //   axios({
-    //     method: 'post',
-    //     url: `/experiments/${experimentId}/run`,
-    //   });
-    // }
+     if(experimentId){
+       axios({
+         method: 'post',
+         url: `http://localhost:8000/experiments/${experimentId}/runsync`,
+       });
+     }
   }
 
   return (
@@ -68,7 +80,7 @@ export default function ParsedContentDisplay({
         </div>
       </div>
 
-      <div className="flex justify-between my-2">
+      <div className="flex justify-end gap-2 my-2 w-full">
         <Button disabled={isSavedFile} onClick={handleFileSave} variant="outline">
           <Save />
           {isSavedFile ? 'File saved!' : 'Save file'}
