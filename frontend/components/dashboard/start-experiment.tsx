@@ -15,15 +15,17 @@ import FileUploader from "../file-upload/file-uploader";
 export default function StartExperimentDialog() {
 
   const [isOpen, setIsOpen] = React.useState(false);
+  const [isStartDisabled, setIsStartDisabled] = React.useState(false);
 
   const handleDialogClose = () => setIsOpen(false);
+  const disableStartButton = () => setIsStartDisabled(true);
 
   return (
     <Dialog open={isOpen} onOpenChange={setIsOpen}>
       <DialogTrigger asChild>
-        <Button variant="default">
+        <Button variant="default" disabled={isStartDisabled}>
           <Cable />
-          Start new experiment
+          {isStartDisabled ? 'Experiment under processing...' : 'Start new experiment'}
         </Button>
       </DialogTrigger>
       <DialogContent className="sm:max-w-[900px] w-full max-h-[90vh] overflow-auto">
@@ -34,7 +36,7 @@ export default function StartExperimentDialog() {
           </DialogDescription>
         </DialogHeader>
         {/* File Upload Process */}
-        <FileUploader handleDialogClose={handleDialogClose} />
+        <FileUploader disableStartButton={disableStartButton} handleDialogClose={handleDialogClose} />
       </DialogContent>
     </Dialog>
   );

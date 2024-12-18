@@ -1,7 +1,8 @@
 export interface Experiment {
   experiment_id: string;
   date: string;
-  runs: { [key: string]: Run };
+  runs: any;
+  // runs: { [key: string]: Run }
 }
 
 export interface Run {

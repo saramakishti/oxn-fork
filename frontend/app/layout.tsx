@@ -1,6 +1,8 @@
 import type { Metadata } from "next";
 import { ThemeProvider } from "@/context/theme-provider";
 import "@/styles/globals.css"
+import { ToastContainer } from "react-toastify";
+import "react-toastify/dist/ReactToastify.css";
 import Layout from "@/components/layout";
 
 export const metadata: Metadata = {
@@ -28,6 +30,7 @@ export default function RootLayout({
         >
           <Layout>
             {children}
+            <ToastContainer position="top-right" autoClose={3000} />
           </Layout>
         </ThemeProvider>
       </body>

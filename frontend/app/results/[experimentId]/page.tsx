@@ -3,8 +3,8 @@ import Link from "next/link";
 import { Button } from "@/components/ui/button";
 import { ChevronLeft } from 'lucide-react'
 import { allResults } from "@/mock-data/results";
-import { ExperimentResultsTable } from "@/components/experiments/table";
-import { resultDetailsConfig } from "@/components/experiments/table-columns";
+import { ExperimentsTable } from "@/components/dynamic-table/table";
+import { resultDetailsConfig } from "@/components/dynamic-table/table-columns";
 import { prepareResultDetailsData } from "@/utils/results";
 
 export default function ExperimentResultDetails(props: any) {
@@ -17,7 +17,7 @@ export default function ExperimentResultDetails(props: any) {
   return (
     <div>
       <div className="flex justify-between">
-        <h1 className="text-2xl font-bold text-gray-900">Details for #{experimentId}</h1>
+        <h1 className="text-2xl font-bold">Details for #{experimentId}</h1>
         <div>
           <Button variant="ghost">
             <ChevronLeft />
@@ -26,7 +26,7 @@ export default function ExperimentResultDetails(props: any) {
         </div>
       </div>
       <div className="container mx-auto">
-        <ExperimentResultsTable filterColumnKey="runId" columns={resultDetailsConfig} data={tableData} />
+        <ExperimentsTable filterColumnKey="runId" columns={resultDetailsConfig} data={tableData} />
       </div>
     </div>
   )

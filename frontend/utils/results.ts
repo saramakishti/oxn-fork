@@ -1,5 +1,5 @@
 import { ExperimentDetailsType, ExperimentType } from "@/types";
-import { Experiment, Run, Interaction, Loadgen } from '../types/experiment';
+import { Experiment, Run, Interaction } from '../types/experiment';
 
 
 export function prepareResultsTableData(data: Experiment[]): ExperimentType[] {
@@ -8,9 +8,9 @@ export function prepareResultsTableData(data: Experiment[]): ExperimentType[] {
     const treatmentNamesSet = new Set<string>();
     const treatmentTypesSet = new Set<string>();
 
-    runs.forEach((run: Run) => {
+    runs.forEach((run: any) => {
       const interactions = Object.values(run.interactions);
-      interactions.forEach((interaction: Interaction) => {
+      interactions.forEach((interaction: any) => {
         treatmentNamesSet.add(interaction.treatment_name);
         treatmentTypesSet.add(interaction.treatment_type);
       });

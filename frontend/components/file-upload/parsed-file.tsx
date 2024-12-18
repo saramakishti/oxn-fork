@@ -4,12 +4,15 @@ import { Cable, Save, Trash } from "lucide-react";
 import { Prism as SyntaxHighlighter } from "react-syntax-highlighter";
 import { oneDark } from "react-syntax-highlighter/dist/esm/styles/prism";
 import { Button } from "../ui/button";
+import { toast } from "react-toastify";
+// import { useApi } from "@/hooks/use-api";
 
 interface ParsedContentDisplayProps {
   fileName: string;
   parsedContent: object;
   onRemoveFile: () => void;
   handleDialogClose: () => void;
+  disableStartButton: () => void;
 }
 
 export default function ParsedContentDisplay({
@@ -17,32 +20,80 @@ export default function ParsedContentDisplay({
   parsedContent,
   onRemoveFile,
   handleDialogClose,
+  disableStartButton,
 }: ParsedContentDisplayProps) {
 
   const [isSavedFile, setIsSavedFile] = React.useState(false)
-  const [experimentId, setExperimentId] = React.useState(null);
+  const [experimentId, setExperimentId] = React.useState<string | null>(null);
 
+  const [createExperimentResponse, setCreateExperimentResponse] = React.useState<any>(null);
+  const [startExperimentResponse, setStartExperimentResponse] = React.useState<any>(null);
+
+  // const { get, post, loading, error } = useApi();
+
+  const onCreateExperiment = async () => {
+    try {
+      // TODO: Uncomment API call and remove hardcoded response below
+      // const response = await post("/experiments", { name: "experiment.yaml", config: parsedContent });
+      const response = {
+        "id": "01733873826",
+        "name": "string",
+        "status": "PENDING",
+        "started_at": null,
+        "completed_at": null,
+        "error_message": null
+      }
+      setCreateExperimentResponse({
+        "id": "01733873826",
+        "name": "string",
+        "status": "PENDING",
+        "started_at": null,
+        "completed_at": null,
+        "error_message": null
+      })
+      console.log("File saved response:", response);
+      toast.success('File saved successfully!');
+      if (response) {
+        setExperimentId(response.id)
+      }
+    } catch (error) {
+      toast.error('An error occurred. Please try again!');
+      console.error("Error creating experiment file:", error);
+    }
+  };
+
+  const onStartExperiment = async () => {
+    try {
+      // TODO: Uncomment API call and remove hardcoded response below
+      // const response = await post(`/experiments/${experimentId}run`, {
+      //   runs: 1,
+      //   output_format: "json"
+      // });
+      const response = {
+        "status": "accepted",
+        "message": "Experiment started successfully",
+        "experiment_id": "11733874120"
+      }
+      setStartExperimentResponse(response)
+      console.log("Experiment started running:", response);
+      toast.success('Experiment started successfully!');
+    } catch (error) {
+      toast.error('An error occurred. Please try again!');
+      console.error("Error starting experiment:", error);
+    }
+  }
 
   const handleFileSave = () => {
     setIsSavedFile(true);
-    // axios({
-    //   method: 'post',
-    //   url: '/experiments',
-    //   data: {
-    //     file: parsedContent
-    //   }
-    // });
+    onCreateExperiment();
   }
 
   const handleStartExperiment = () => {
-    alert('Experiment is starting...')
-    handleDialogClose();
-    // if(experimentId){
-    //   axios({
-    //     method: 'post',
-    //     url: `/experiments/${experimentId}/run`,
-    //   });
-    // }
+    if (experimentId) {
+      onStartExperiment();
+      disableStartButton();
+      handleDialogClose();
+    }
   }
 
   return (
