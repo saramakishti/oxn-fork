@@ -36,6 +36,5 @@ terraform.tfstate.backup
 *.log
 
 # Cluster configuration
-config/.cluster-prefix
 backend.egg-info
 k8s/scripts/config/.cluster-name
