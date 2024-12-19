@@ -3,8 +3,11 @@ SPAN_ID_COLUMN = "span_id"
 REF_TYPE_SPAN_ID = "ref_type_span_ID"
 DURATION_COLUMN = "duration"
 TRACE_ID_COLUMN = "trace_id"
+START_TIME = 'start_time'
 
 NOT_AVAILABLE = "N/A"
+
+SUPERVISED_COLUMN = "packet_loss_treatment"
 
 PROJECT_ID = "advanced-cloud-prototyping"
 
