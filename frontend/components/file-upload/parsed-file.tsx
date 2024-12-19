@@ -119,7 +119,7 @@ export default function ParsedContentDisplay({
         </div>
       </div>
 
-      <div className="flex justify-between my-2">
+      <div className="flex justify-end gap-2 my-2 w-full">
         <Button disabled={isSavedFile} onClick={handleFileSave} variant="outline">
           <Save />
           {isSavedFile ? 'File saved!' : 'Save file'}

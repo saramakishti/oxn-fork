@@ -1,7 +1,9 @@
-name: Build and Push Frontend Docker Image
+name: Build and Push Backend Docker Image
 
 on:
   push:
+    branches:
+      - main
     paths:
       - 'backend/**'
 jobs:
