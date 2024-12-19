@@ -12,7 +12,8 @@ export default function Home() {
         <Button variant="outline">
           <Telescope />
           <Link href='/results'>
-            Explore past results</Link>
+            Explore past results
+          </Link>
         </Button>
       </div>
       <div className="my-4">

@@ -8,24 +8,15 @@ import {
   TooltipProvider,
   TooltipTrigger,
 } from "@/components/ui/tooltip";
-// import { useApi } from "@/hooks/useApi";
-
+import { useApi } from "@/hooks/use-api";
 
 export default function ExperimentTableActions({ experimentID }: { experimentID: string }) {
 
-  // const { get } = useApi();
+  const { get } = useApi();
 
   const onRefreshStatus = async () => {
     try {
-      // const response = await get(`/experiments/${experimentID}/status`);
-      const response = {
-        "id": experimentID,
-        "name": "string",
-        "status": "FAILED",
-        "started_at": null,
-        "completed_at": null,
-        "error_message": ""
-      }
+      const response = await get(`/experiments/${experimentID}/status`);
       console.log(response);
     } catch (error) {
       console.error('Error refreshing status...', error)
@@ -35,8 +26,7 @@ export default function ExperimentTableActions({ experimentID }: { experimentID:
 
   const onDownloadBenchmark = async () => {
     try {
-      // const response = await get(`/experiments/${experimentID}/benchmark`);
-      const response = null;
+      const response = await get(`/experiments/${experimentID}/benchmark`);
       console.log(response);
     } catch (error) {
       console.error('Error downloading benchmark...', error)

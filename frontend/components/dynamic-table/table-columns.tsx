@@ -201,10 +201,12 @@ export const allExperimentsConfig: ColumnDef<any>[] = [
   {
     accessorKey: "started_at",
     header: "Started at",
+    cell: ({ row }) => formatDate(row.original.started_at),
   },
   {
     accessorKey: "completed_at",
     header: "Completed at",
+    cell: ({ row }) => formatDate(row.original.completed_at),
   },
   {
     accessorKey: "status",
@@ -217,7 +219,6 @@ export const allExperimentsConfig: ColumnDef<any>[] = [
     id: "actions",
     header: "Actions",
     cell: ({ row }: any) => {
-
       return <ExperimentTableActions experimentID={row.original.id} />
     }
   }
