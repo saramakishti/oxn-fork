@@ -16,4 +16,5 @@ RUN uv pip install httpx uvicorn[standard] anyio
 RUN mkdir -p /mnt/oxn-data/experiments
 
 # Default command runs tests
-CMD ["uv", "run", "pytest", "test_main.py", "-v", "--tb=short", "-s"]
+#CMD ["uv", "run", "pytest", "test_main.py", "-v", "--tb=short", "-s"]
+CMD ["uv", "run", "pytest", "tests/test_experiment_manager.py", "-v", "--tb=short", "-s"]

@@ -184,23 +184,26 @@ class ExperimentManager:
             self.lock_fd.close()
             delattr(self, 'lock_fd')
     
-    # Needs to get updated: run id of experiment is now in the filename
-    # See write_experiment_data for implementation
-    def get_experiment_response_data(self, experiment_id : str, response_name : str , file_ending : str):
+    def get_experiment_response_data(self,run: int, experiment_id: str, response_name: str, file_ending: str):
         '''gets experiments data for a given id and data format, the given file'''
-        path = Path(self.experiments_dir) / experiment_id /(response_name + "." + file_ending)
-        logger.info(f"Path: {path}")
-        logger.info(f"Suffix: {path.suffix}")
-        if not path.is_file():
-            raise FileNotFoundError()
+        data_path = Path(self.experiments_dir) / experiment_id / 'data'
         
-        if path.suffix == ".json":
-            return FileResponse(path, media_type="application/json", filename=f"{response_name}{path.suffix}")
-        elif path.suffix == ".csv":
-            return FileResponse(path, media_type="text/csv", filename=f"{response_name}{path.suffix}")
+        # List all matching files for the given response name and file ending
+        matching_files = list(data_path.glob(f"{run}_{experiment_id}_{response_name}.{file_ending}"))
+        
+        if not matching_files:
+            raise FileNotFoundError(f"No {file_ending} files found for response {response_name}")
+        
+        # Match the file name to our convention
+        path = data_path / f"{run}_{experiment_id}_{response_name}.{file_ending}"
+        
+        if file_ending == "json":
+            return FileResponse(path, media_type="application/json", filename=f"{run}_{experiment_id}_{response_name}.{file_ending}")
+        elif file_ending == "csv":
+            return FileResponse(path, media_type="text/csv", filename=f"{run}_{experiment_id}_{response_name}.{file_ending}")
         else:
-            logger.info("unexpected behavior inside the filesystem")
-            raise FileNotFoundError("queried for a not specified error")
+            logger.info("Unexpected file format requested")
+            raise FileNotFoundError("Queried for an unsupported file format")
 
     def zip_experiment_data(self, experiment_id : str):
         '''zips all the data for a given experiment id'''
@@ -210,7 +213,7 @@ class ExperimentManager:
         
         if not data_path.is_dir():
             logger.error(f"experiment directory {experiment_id} does not exist")
-            return None
+            raise FileNotFoundError(f"experiment directory {experiment_id} does not exist")
             
         with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=7) as zipf:
             for file in data_path.iterdir():
@@ -238,6 +241,7 @@ class ExperimentManager:
                     # Then the columns will be all the different fields of the response
                     # Then write the response data to a csv file
                     response.data.to_csv(self.experiments_dir / experiment_id / 'data' / f"{run}_{experiment_id}_{response.name}.csv", index=False)
+                    logger.debug(f"wrote {run}_{experiment_id}_{response.name}.csv")
                 elif format == "json":
                     if isinstance(response.data, pd.DataFrame):
                         response.data = response.data.to_dict(orient='records') # type: ignore
@@ -245,23 +249,30 @@ class ExperimentManager:
                     # Then write the response data to a json file
                     with open(self.experiments_dir / experiment_id / 'data' / f"{run}_{experiment_id}_{response.name}.json", "w") as f:
                         json.dump(response.data, f)
-            
+                    logger.debug(f"wrote {run}_{experiment_id}_{response.name}.json")
 
     def list_experiment_variables(self, experiment_id : str )-> Optional[Tuple[List[str], List[str]]]:
         '''list all files (response varibales) in a given experiment folder, returns None if folder does not exist or is empty'''
-        path = Path(self.experiments_dir ) / experiment_id
+        path = Path(self.experiments_dir ) / experiment_id / 'data'
         if not path.is_dir():
             logger.error(f"experiment directory {experiment_id} does not exist")
             return None
+        
+        # List all files in the data directory
+        files = list(path.iterdir())
+        if not files:
+            logger.info(f"empty experiment directory with ID {experiment_id}, no reponse variables found")
+            return None
 
-        variable_names = [file.name.split('.')[0] for file in path.iterdir() if file.is_file()]
-        file_endings = [file.suffix[1:] for file in path.iterdir() if file.is_file()]
+        # Extract just the response variable name (after last underscore, before extension)
+        variable_names = [file.name.split('_')[-1].split('.')[0] for file in files if file.is_file()]
+        file_endings = [file.suffix[1:] for file in files if file.is_file()]
 
         if not variable_names:
             logger.info(f"empty experiment directory with ID {experiment_id}, no reponse variables found")
             return None
 
-        return variable_names , file_endings
+        return variable_names, file_endings
         
         
 

@@ -6,6 +6,10 @@ import json
 import shutil
 import tempfile
 from backend.internal.experiment_manager import ExperimentManager
+import pandas as pd
+from backend.internal.models.response import ResponseVariable
+from backend.internal.responses import MetricResponseVariable, TraceResponseVariable
+import zipfile
 
 
 
@@ -214,3 +218,334 @@ async def test_run_experiment(experiment_manager, sample_config):
             randomize=False,
             accounting=False
         )
+
+def test_write_experiment_data(experiment_manager):
+    """Test writing experiment data in different formats"""
+    experiment = experiment_manager.create_experiment(
+        name="Test Experiment vhjifk",
+        config={"test": "config"}
+    )
+    
+    # Create mock orchestrator
+    mock_orchestrator = unittest.mock.Mock()
+    
+    # Create test response data using concrete implementations
+    responses = {
+        "metric1": MetricResponseVariable(
+            orchestrator=mock_orchestrator,
+            name="metric1",
+            experiment_start=1000,
+            experiment_end=2000,
+            right_window="10s",
+            left_window="10s",
+            description={
+                "metric_name": "test_metric",
+                "step": 1,
+                "left_window": "10s",
+                "right_window": "10s"
+            },
+            target="oxn"
+        ),
+        "trace1": TraceResponseVariable(
+            orchestrator=mock_orchestrator,
+            name="trace1",
+            experiment_start=1000,
+            experiment_end=2000,
+            right_window="10s",
+            left_window="10s",
+            description={
+                "service_name": "test-service",
+                "limit": 100,
+                "left_window": "10s",
+                "right_window": "10s"
+            }
+        )
+    }
+    
+    # Set the data directly since we're not actually observing
+    responses["metric1"].data = pd.DataFrame({
+        "timestamp": [1, 2, 3],
+        "value": [10.0, 20.0, 30.0],
+        "cpu_usage": [0.5, 0.7, 0.9],
+        "memory_mb": [256, 512, 1024],
+        "requests_per_sec": [100, 150, 200]
+    })
+    responses["trace1"].data = pd.DataFrame({
+        "id": [1, 2],
+        "name": ["trace1", "trace2"], 
+        "duration": [100, 200],
+        "status": ["success", "success"],
+        "error_count": [0, 0],
+        "span_count": [5, 8]
+    })
+    
+    # Write data in different formats
+    # responses : Dict[str, ResponseVariable]
+    experiment_manager.write_experiment_data(
+        run=0,
+        experiment_id=experiment['id'],
+        responses=responses,
+        formats=["csv", "json"]
+    )
+    
+    # Verify files were created
+    data_dir = experiment_manager.experiments_dir / experiment['id'] / 'data'
+    assert (data_dir / f"0_{experiment['id']}_metric1.csv").exists()
+    assert (data_dir / f"0_{experiment['id']}_metric1.json").exists()
+    assert (data_dir / f"0_{experiment['id']}_trace1.json").exists()
+    
+    # Verify CSV content
+    df = pd.read_csv(data_dir / f"0_{experiment['id']}_metric1.csv")
+    assert len(df) == 3
+    assert list(df.columns) == ["timestamp", "value", "cpu_usage", "memory_mb", "requests_per_sec"]
+    
+    # Verify JSON content
+    with open(data_dir / f"0_{experiment['id']}_trace1.json") as f:
+        trace_data = json.load(f)
+        assert len(trace_data) == 2
+
+def test_get_experiment_response_data(experiment_manager):
+    """Test retrieving experiment response data"""
+    experiment = experiment_manager.create_experiment(
+        name="Test Experiment",
+        config={"test": "config"}
+    )
+    print(experiment['id'])
+    # Create mock orchestrator
+    mock_orchestrator = unittest.mock.Mock()
+    
+    # Create test response data
+    responses = {
+        "metric1": MetricResponseVariable(
+            orchestrator=mock_orchestrator,
+            name="metric1",
+            experiment_start=1000,
+            experiment_end=2000,
+            right_window="10s",
+            left_window="10s",
+            description={
+                "metric_name": "test_metric",
+                "step": 1,
+                "left_window": "10s",
+                "right_window": "10s"
+            },
+            target="oxn"
+        )
+    }
+    
+    # Set the data directly
+    responses["metric1"].data = pd.DataFrame({
+        "timestamp": [1, 2, 3],
+        "value": [10.0, 20.0, 30.0]
+    })
+
+    # Write data in different formats
+    experiment_manager.write_experiment_data(
+        run=0,
+        experiment_id=experiment['id'],
+        responses=responses,
+        formats=["csv", "json"]
+    )
+
+    # Test retrieving CSV data
+    csv_response = experiment_manager.get_experiment_response_data(
+        run=0,
+        experiment_id=experiment['id'],
+        response_name=f"metric1",
+        file_ending="csv"
+    )
+    assert csv_response.media_type == "text/csv"
+    assert csv_response.filename == f"0_{experiment['id']}_metric1.csv"
+
+    # Test retrieving JSON data  
+    json_response = experiment_manager.get_experiment_response_data(
+        run=0,
+        experiment_id=experiment['id'],
+        response_name=f"metric1", 
+        file_ending="json"
+    )
+    assert json_response.media_type == "application/json"
+    assert json_response.filename == f"0_{experiment['id']}_metric1.json"
+
+    # Test retrieving non-existent file
+    with pytest.raises(FileNotFoundError):
+        experiment_manager.get_experiment_response_data(
+            run=0,
+            experiment_id=experiment['id'],
+            response_name="nonexistent",
+            file_ending="csv"
+        )
+
+    # Test retrieving invalid file type
+    with pytest.raises(FileNotFoundError):
+        experiment_manager.get_experiment_response_data(
+            run=0,
+            experiment_id=experiment['id'],
+            response_name=f"0_{experiment['id']}_metric1",
+            file_ending="invalid"
+        )
+
+def test_zip_experiment_data(experiment_manager):
+    """Test zipping experiment data"""
+    experiment = experiment_manager.create_experiment(
+        name="Test Experiment",
+        config={"test": "config"}
+    )
+    
+    # Create mock orchestrator
+    mock_orchestrator = unittest.mock.Mock()
+    
+    # Create test response data
+    responses = {
+        "metric1": MetricResponseVariable(
+            orchestrator=mock_orchestrator,
+            name="metric1",
+            experiment_start=1000,
+            experiment_end=2000,
+            right_window="10s",
+            left_window="10s",
+            description={
+                "metric_name": "test_metric",
+                "step": 1,
+                "left_window": "10s",
+                "right_window": "10s"
+            },
+            target="oxn"
+        ),
+        "trace1": TraceResponseVariable(
+            orchestrator=mock_orchestrator,
+            name="trace1",
+            experiment_start=1000,
+            experiment_end=2000,
+            right_window="10s",
+            left_window="10s",
+            description={
+                "service_name": "test-service",
+                "limit": 100,
+                "left_window": "10s",
+                "right_window": "10s"
+            }
+        )
+    }
+    
+    # Set the data directly
+    responses["metric1"].data = pd.DataFrame({
+        "timestamp": [1, 2, 3],
+        "value": [10.0, 20.0, 30.0],
+        "cpu_usage": [0.5, 0.7, 0.9],
+        "memory_mb": [256, 512, 1024],
+        "requests_per_sec": [100, 150, 200]
+    })
+    responses["trace1"].data = pd.DataFrame({
+        "id": [1, 2],
+        "name": ["trace1", "trace2"], 
+        "duration": [100, 200],
+        "status": ["success", "success"],
+        "error_count": [0, 0],
+        "span_count": [5, 8]
+    })
+
+    # Write data in different formats
+    experiment_manager.write_experiment_data(
+        run=0,
+        experiment_id=experiment['id'],
+        responses=responses,
+        formats=["csv", "json"]
+    )
+
+    # Test zipping experiment data
+    zip_response = experiment_manager.zip_experiment_data(
+        experiment_id=experiment['id']
+    )
+
+    # the zip response is a PosixPath
+    assert isinstance(zip_response, Path)
+    assert zip_response.name == f"{experiment['id']}.zip"
+    assert zip_response.exists()
+    assert zip_response.is_file()
+    
+
+    # Test zipping non-existent experiment data
+    with pytest.raises(FileNotFoundError):
+        experiment_manager.zip_experiment_data(
+            experiment_id="nonexistent"
+        )
+
+def test_list_experiment_variables(experiment_manager):
+    """Test listing experiment variables"""
+    # Create test experiment with data
+    experiment = experiment_manager.create_experiment(
+        name="Test Experiment",
+        config={"test": "config"}
+    )
+
+    mock_orchestrator = unittest.mock.Mock()
+    
+    # Create and write test data
+    responses = {
+        "metric1": MetricResponseVariable(
+            orchestrator=mock_orchestrator,
+            name="metric1",
+            experiment_start=1000,
+            experiment_end=2000,
+            right_window="10s",
+            left_window="10s",
+            description={
+                "metric_name": "test_metric",
+                "step": 1,
+                "left_window": "10s",
+                "right_window": "10s"
+            },
+            target="oxn"
+        ),
+        "trace1": TraceResponseVariable(
+            orchestrator=mock_orchestrator,
+            name="trace1",
+            experiment_start=1000,
+            experiment_end=2000,
+            right_window="10s",
+            left_window="10s",
+            description={
+                "service_name": "test-service",
+                "limit": 100,
+                "left_window": "10s",
+                "right_window": "10s"
+            }
+        )
+    }
+
+    responses["metric1"].data = pd.DataFrame({
+        "timestamp": [1, 2, 3],
+        "value": [10.0, 20.0, 30.0],
+        "cpu_usage": [0.5, 0.7, 0.9],
+        "memory_mb": [256, 512, 1024],
+        "requests_per_sec": [100, 150, 200]
+    })
+    responses["trace1"].data = pd.DataFrame({
+        "id": [1, 2],
+        "name": ["trace1", "trace2"], 
+        "duration": [100, 200],
+        "status": ["success", "success"],
+        "error_count": [0, 0],
+        "span_count": [5, 8]
+    })
+    
+    experiment_manager.write_experiment_data(
+        run=0,
+        experiment_id=experiment['id'],
+        responses=responses,
+        formats=["csv", "json"]
+    )
+    
+    # Test listing variables
+    variables = experiment_manager.list_experiment_variables(experiment['id'])
+    assert variables is not None
+    print(variables)
+    var_names, file_endings = variables
+    assert f"metric1" in var_names
+    assert f"trace1" in var_names
+    assert "csv" in file_endings
+    assert "json" in file_endings
+    
+    # Test non-existent experiment
+    assert experiment_manager.list_experiment_variables("nonexistent") is None
