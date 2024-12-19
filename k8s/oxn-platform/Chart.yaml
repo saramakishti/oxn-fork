@@ -12,6 +12,11 @@ dependencies:
   - name: backend-chart
     version: 1.0.0
     repository: "file://./charts/backend-chart"
+    condition: backend-chart.enabled
+  - name: backend-dev-chart
+    version: 1.0.0
+    repository: "file://./charts/backend-dev-chart"
+    condition: backend-dev-chart.enabled
 #  - name: analysis
 #    version: 1.0.0
 #    repository: "file://./charts/analysis-chart"

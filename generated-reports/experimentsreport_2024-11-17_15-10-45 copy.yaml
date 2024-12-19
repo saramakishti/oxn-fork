@@ -1,0 +1,45 @@
+report:
+  runs:
+    6213b211:
+      interactions:
+        interaction_0:
+          treatment_name: empty_treatment
+          treatment_start: 2024-11-17 15:10:56.143224
+          treatment_end: 2024-11-17 15:15:56.143810
+          treatment_type: EmptyTreatment
+          response_name: frontend_traces.duration
+          response_start: 2024-11-17 15:10:36.141508
+          response_end: 2024-11-17 15:16:06.144440
+          response_type: TraceResponseVariable
+          p_value: nan
+          test_statistic: nan
+          test_performed: welch t-test
+          store_key: /tmp/latest.yml/6213b211/frontend_traces
+      loadgen:
+        loadgen_start_time: 2024-11-17 15:10:46.141792
+        loadgen_end_time: 2024-11-17 15:16:07.459476
+        loadgen_total_requests: 39533
+        loadgen_total_failures: 103
+        task_details:
+          f620772fe02b4bad:
+            url: /
+            verb: GET
+            requests: 1614
+            failures: 92
+            fail_ratio: 0.057001239157372985
+            sum_response_time: 3968926.779601016
+            min_response_time: 14.8613329993168
+            max_response_time: 15199.399483999514
+            avg_response_time: 2459.062440892823
+            median_response_time: 99
+          e1842e9836b44386:
+            url: /api/products/2ZYFJ3GM2N
+            verb: GET
+            requests: 1822
+            failures: 0
+            fail_ratio: 0.0
+            sum_response_time: 134340.56113598286
+            min_response_time: 5.830048000461829
+            max_response_time: 11412.889264999649
+            avg_response_time: 73.73247043687314
+            median_response_time: 23

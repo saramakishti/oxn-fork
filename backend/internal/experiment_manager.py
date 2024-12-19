@@ -1,4 +1,7 @@
 
+import zipfile
+import yaml
+from backend.internal.models.response import ResponseVariable
 from fastapi import HTTPException
 from pathlib import Path
 import json
@@ -7,8 +10,8 @@ from datetime import datetime
 import fcntl
 import logging
 from fastapi.responses import FileResponse
-from typing import Optional, Tuple, List
-
+from typing import Dict, Optional, Tuple, List
+import pandas as pd
 from backend.internal.engine import Engine
 from backend.internal.kubernetes_orchestrator import KubernetesOrchestrator
 
@@ -85,7 +88,7 @@ class ExperimentManager:
                 return f.read()
         return None
     
-    def run_experiment(self, experiment_id, output_format, runs):
+    def run_experiment(self, experiment_id, output_formats, runs):
         """Run experiment"""
         if not self.acquire_lock():
             logger.info("Lock already held, skipping experiment check")
@@ -103,19 +106,30 @@ class ExperimentManager:
                 configuration_path=experiment,
                 report_path=report_path,
                 out_path=out_path,
-                out_formats=[output_format],
                 orchestrator_class=orchestrator,
                 spec=experiment,
-                config_filename=experiment_id
+                id=experiment_id
             )
+            report_data = {}
+            for idx in range(runs):
+                # report contains different run keys for each run.
+                # A mismatch here: the report data is stored in a dict with run keys, but the response data is stored in a dict with response names.
+                # Multiple calls to run() will keep on adding to the report data, so we only care about this object when we are done with all runs.
+                # In contrast, we care about the response data for each run, so we need to write it to disk immediately.
+                responses, report_data = engine.run(orchestration_timeout=None, randomize=False, accounting=False)
+                
+                self.write_experiment_data(idx,experiment_id, responses, output_formats)
 
-            engine.run(runs=runs, orchestration_timeout=None, randomize=False, accounting=False)
+            # Write the report data to disk
+            with open(report_path / "report.yaml", "w") as f:
+                yaml.dump(report_data, f)
         except Exception as e:
             logger.error(f"Error running experiment: {e}")
             import traceback
             logger.error(f"stacktrace: {traceback.format_exc()}")
             self.update_experiment(experiment_id, {'status': 'FAILED', 'error_message': str(e)})
         finally:
+            self.update_experiment(experiment_id, {'status': 'COMPLETED'})
             self.release_lock()
     
     def experiment_exists(self, experiment_id):
@@ -170,7 +184,9 @@ class ExperimentManager:
             self.lock_fd.close()
             delattr(self, 'lock_fd')
     
-    def get_experiment_data(self, experiment_id : str, response_name : str , file_ending : str):
+    # Needs to get updated: run id of experiment is now in the filename
+    # See write_experiment_data for implementation
+    def get_experiment_response_data(self, experiment_id : str, response_name : str , file_ending : str):
         '''gets experiments data for a given id and data format, the given file'''
         path = Path(self.experiments_dir) / experiment_id /(response_name + "." + file_ending)
         logger.info(f"Path: {path}")
@@ -186,6 +202,50 @@ class ExperimentManager:
             logger.info("unexpected behavior inside the filesystem")
             raise FileNotFoundError("queried for a not specified error")
 
+    def zip_experiment_data(self, experiment_id : str):
+        '''zips all the data for a given experiment id'''
+        # Example zip file name: <experiment_id>.zip
+        data_path = Path(self.experiments_dir) / experiment_id / 'data'
+        zip_path = Path(self.experiments_dir) / experiment_id / f'{experiment_id}.zip'
+        
+        if not data_path.is_dir():
+            logger.error(f"experiment directory {experiment_id} does not exist")
+            return None
+            
+        with zipfile.ZipFile(zip_path, 'w', zipfile.ZIP_DEFLATED, compresslevel=7) as zipf:
+            for file in data_path.iterdir():
+                if file.is_file():
+                    zipf.write(file, arcname=file.name)
+                    
+        return zip_path
+    
+    def get_data(self, path: Path):
+        '''gets all the data for a given path'''
+        with open(path, 'rb') as file:
+            yield from file
+
+        
+    def write_experiment_data(self, run: int, experiment_id : str, responses : Dict[str, ResponseVariable], formats : List[str]):
+        '''writes the response data to disk'''
+        for _ , response in responses.items():
+            # use experiment id / run id / response name as key
+            for format in formats:
+                if response.data is None:
+                    logger.error(f"response data is None for {response.name}")
+                    continue
+                if format == "csv":
+                    # example filename: <run_id>_<experiment_id>_<response_name>.csv
+                    # Then the columns will be all the different fields of the response
+                    # Then write the response data to a csv file
+                    response.data.to_csv(self.experiments_dir / experiment_id / 'data' / f"{run}_{experiment_id}_{response.name}.csv", index=False)
+                elif format == "json":
+                    if isinstance(response.data, pd.DataFrame):
+                        response.data = response.data.to_dict(orient='records') # type: ignore
+                    # example filename: <run_id>_<experiment_id>_<response_name>.json
+                    # Then write the response data to a json file
+                    with open(self.experiments_dir / experiment_id / 'data' / f"{run}_{experiment_id}_{response.name}.json", "w") as f:
+                        json.dump(response.data, f)
+            
 
     def list_experiment_variables(self, experiment_id : str )-> Optional[Tuple[List[str], List[str]]]:
         '''list all files (response varibales) in a given experiment folder, returns None if folder does not exist or is empty'''

@@ -39,12 +39,11 @@ from backend.internal.treatments import (
     ProbabilisticSamplingTreatment,
     KubernetesProbabilisticHeadSamplingTreatment
 )
-from backend.internal.utils import utc_timestamp
+from backend.internal.utils import utc_timestamp, humanize_utc_timestamp
 from backend.internal.observer import Observer
 from backend.internal.pricing import Accountant
 from backend.internal.models.treatment import Treatment
 from backend.internal.models.orchestrator import Orchestrator
-
 logger = logging.getLogger(__name__)
 logger.info = lambda message: print(message)
 
@@ -88,7 +87,7 @@ class ExperimentRunner:
             self,
             orchestrator:Orchestrator,
             config=None,
-            config_filename=None,
+            experiment_id=None,
             additional_treatments=None,
             random_treatment_order=False,
             accountant_names=None,
@@ -96,7 +95,7 @@ class ExperimentRunner:
         self.orchestrator = orchestrator
         self.config = config
         """Experiment specification dict"""
-        self.config_filename = config_filename
+        self.experiment_id = experiment_id
         """Experiment specification filename"""
         self.id = uuid.uuid4().hex
         """Random and unique ID to identify runs"""
@@ -130,7 +129,7 @@ class ExperimentRunner:
         """Populate the treatment dicts from the config and any user-supplied treatments"""
 
     def __repr__(self):
-        return f"ExperimentRunner(config={self.config_filename}, hash={self.short_hash}, run={self.short_id})"
+        return f"ExperimentRunner(config={self.experiment_id}, hash={self.short_hash}, run={self.short_id})"
 
     @property
     def short_id(self) -> str:
@@ -145,18 +144,18 @@ class ExperimentRunner:
     @property
     def humanize_start_timestamp(self) -> datetime.datetime:
         """Return the human-readable start timestamp"""
-        return utils.humanize_utc_timestamp(self.experiment_start)
+        return humanize_utc_timestamp(self.experiment_start)
 
     @property
     def humanize_end_timestamp(self) -> datetime.datetime:
         """Return the human-readable start timestamp"""
-        return utils.humanize_utc_timestamp(self.experiment_end)
+        return humanize_utc_timestamp(self.experiment_end)
 
     def _compute_hash(self) -> None:
         """Hash the config filename to uniquely identify experiments"""
-        if self.config_filename:
+        if self.experiment_id:
             hasher = hashlib.sha256(usedforsecurity=False)
-            hasher.update(str(self.config_filename).encode('utf-8'))
+            hasher.update(str(self.experiment_id).encode('utf-8'))
             self.hash = hasher.hexdigest()
 
     def _build_treatments(self) -> None:

@@ -1,0 +1,15 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    volumes:
+      - ./mnt:/mnt/oxn-data/experiments
+    ports:
+      - "8000:8000"
+    environment:
+      - PYTHONPATH=/backend
+      - LOG_LEVEL=DEBUG
+      - PYTHONUNBUFFERED=1
+
+  

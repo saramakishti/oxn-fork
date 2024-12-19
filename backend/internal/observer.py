@@ -8,6 +8,7 @@ import logging
 from typing import Dict, List, Optional
 from operator import attrgetter
 
+import pandas as pd
 from backend.internal.models.orchestrator import Orchestrator
 
 
@@ -105,7 +106,6 @@ class Observer:
             for _, v in self.variables().items()
             if isinstance(v, TraceResponseVariable)
         ]
-
     def observe(self) -> None:
         for variable in self.variables().values():
             try:
