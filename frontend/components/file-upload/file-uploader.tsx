@@ -9,9 +9,10 @@ import ParsedContentDisplay from "./parsed-file";
 interface FileUploaderProps {
   filesAccepted?: string[];
   handleDialogClose: () => void;
+  disableStartButton: () => void;
 }
 
-export default function FileUploader({ filesAccepted = [".yaml"], handleDialogClose }: FileUploaderProps) {
+export default function FileUploader({ filesAccepted = [".yaml"], handleDialogClose, disableStartButton }: FileUploaderProps) {
   const [selectedFile, setSelectedFile] = useState<File | null>(null);
   const [parsedContent, setParsedContent] = useState<object | null>(null);
 
@@ -74,6 +75,7 @@ export default function FileUploader({ filesAccepted = [".yaml"], handleDialogCl
         {parsedContent && selectedFile && (
           <ParsedContentDisplay
             handleDialogClose={handleDialogClose}
+            disableStartButton={disableStartButton}
             fileName={selectedFile.name}
             parsedContent={parsedContent}
             onRemoveFile={handleRemoveFile}

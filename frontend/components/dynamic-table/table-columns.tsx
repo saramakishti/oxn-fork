@@ -8,6 +8,7 @@ import { formatDate } from "@/utils/dates";
 import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger, DropdownMenuLabel, DropdownMenuItem, DropdownMenuSeparator } from "../ui/dropdown-menu";
 import { Button } from "../ui/button";
 import { Badge } from "../ui/badge";
+import ExperimentTableActions from "../experiments/table-actions";
 
 
 export const allResultsConfig: ColumnDef<ExperimentType>[] = [
@@ -79,7 +80,7 @@ export const allResultsConfig: ColumnDef<ExperimentType>[] = [
 
             <DropdownMenuItem
               className="cursor-pointer"
-              onClick={() => navigator.clipboard.writeText(row.experimentId)}
+              onClick={() => navigator.clipboard.writeText(experimentId)}
             >
               <Copy />
               Copy experiment ID
@@ -90,7 +91,7 @@ export const allResultsConfig: ColumnDef<ExperimentType>[] = [
               <Link href={`/results/${experimentId}`}>View details</Link>
             </DropdownMenuItem>
             <DropdownMenuItem>
-              <Button>
+              <Button disabled>
                 {/* TODO: Add API to download file */}
                 <Download />
                 Download file
@@ -187,3 +188,38 @@ export const resultDetailsConfig: ColumnDef<any>[] = [
     header: 'Total Failures',
   },
 ];
+
+export const allExperimentsConfig: ColumnDef<any>[] = [
+  {
+    accessorKey: "id",
+    header: "Experiment ID",
+  },
+  {
+    accessorKey: "name",
+    header: "Experiment name",
+  },
+  {
+    accessorKey: "started_at",
+    header: "Started at",
+    cell: ({ row }) => formatDate(row.original.started_at),
+  },
+  {
+    accessorKey: "completed_at",
+    header: "Completed at",
+    cell: ({ row }) => formatDate(row.original.completed_at),
+  },
+  {
+    accessorKey: "status",
+    header: "Status",
+    cell: ({ row }: any) => {
+      return <Badge className="mx-1" variant="default">{row.original.status}</Badge>
+    }
+  },
+  {
+    id: "actions",
+    header: "Actions",
+    cell: ({ row }: any) => {
+      return <ExperimentTableActions experimentID={row.original.id} />
+    }
+  }
+]

@@ -1,11 +1,10 @@
 'use client';
-
 import React from 'react';
 import { Button } from '@/components/ui/button';
 import { useRouter } from 'next/navigation';
 import { Construction } from 'lucide-react';
 
-export default function ComingSoon() {
+export default function ComingSoon({ showBackButton = true }: { showBackButton: boolean }) {
   const router = useRouter();
 
   const handleGoBack = () => {
@@ -19,9 +18,9 @@ export default function ComingSoon() {
       <p className="text-lg text-center mb-6">
         This page is under construction.
       </p>
-      <Button variant="default" size="lg" onClick={handleGoBack}>
+      {showBackButton && <Button variant="default" size="lg" onClick={handleGoBack}>
         Go back
-      </Button>
+      </Button>}
     </div>
   );
 }

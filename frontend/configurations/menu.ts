@@ -1,5 +1,13 @@
 import { MenuId } from "@/types"
-import { FileChartLine, Search, Settings, Gauge, Activity, FileSliders, FileText } from "lucide-react"
+import {
+  FileChartLine,
+  Gauge,
+  MonitorCog,
+  // Settings,
+  // FileText,
+  // Activity,
+  // Search,
+} from "lucide-react"
 
 export const items = [
   {
@@ -12,7 +20,7 @@ export const items = [
     id: MenuId.EXPERIMENTS,
     title: "Experiments",
     url: "/experiments",
-    icon: FileSliders,
+    icon: MonitorCog,
   },
   {
     id: MenuId.RESULTS,
@@ -20,22 +28,22 @@ export const items = [
     url: "/results",
     icon: FileChartLine,
   },
-  {
-    id: MenuId.REALTIME,
-    title: 'Real-time monitoring',
-    url: '/real-time',
-    icon: Activity,
-  },
-  {
-    id: MenuId.SEARCH,
-    title: "Search",
-    url: "/search",
-    icon: Search,
-  },
-  {
-    id: MenuId.SETTINGS,
-    title: "Settings",
-    url: "/settings",
-    icon: Settings,
-  }
+  // {
+  //   id: MenuId.REALTIME,
+  //   title: 'Real-time monitoring',
+  //   url: '/real-time',
+  //   icon: Activity,
+  // },
+  // {
+  //   id: MenuId.SEARCH,
+  //   title: "Search",
+  //   url: "/search",
+  //   icon: Search,
+  // },
+  // {
+  //   id: MenuId.SETTINGS,
+  //   title: "Settings",
+  //   url: "/settings",
+  //   icon: Settings,
+  // }
 ]
