@@ -4,6 +4,7 @@ metadata:
   name: {{ .Chart.Name }}
   namespace: {{ .Values.global.namespace }}
 spec:
+  type: LoadBalancer
   selector:
     app: {{ .Chart.Name }}
   ports:
