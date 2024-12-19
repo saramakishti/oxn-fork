@@ -6,14 +6,14 @@ Here I use the class coding to an interface for the bridge between local develop
 from __future__ import annotations
 from abc import ABC, abstractmethod
 import os
-#from google.cloud import storage
 import constants
 import pandas as pd
+from pathlib import Path
 
 class StorageHandler(ABC):
 
      @abstractmethod
-     def list_raw_datafiles_for_exp(self, dir_name) -> list[str]:
+     def list_files_in_dir(self, dir_name) -> list[str]:
           '''
           This class lists all Filenames in a directory
           '''
@@ -32,44 +32,58 @@ class StorageHandler(ABC):
 # TODO add rel_path offset in all functions
 class LocalStorageHandler(StorageHandler):
 
-     def __init__(self, rel_path=None) -> None:
+     def __init__(self, base_path) -> None:
           super().__init__()
-          self.rel_path = rel_path if rel_path is not None  else ""
+          self.base_path = base_path
      
-     def list_files_in_dir(self, dir_name) -> list[str]:
+     def list_files_in_dir(self, experiment_id) -> list[str]:
           try:
-               files = os.listdir(dir_name)
-               file_list = [f for f in files if os.path.isfile(os.path.join(dir_name, f))]
-               return file_list
+               dir_path = Path(self.base_path) / Path(experiment_id)
+               print(dir_path)
+               files = os.listdir(dir_path)
+               return files
           except FileNotFoundError:
-               print(f"Error: Directory '{dir_name}' not found.")
+               print(f"Error: Directory '{dir_path}' not found.")
                return []
      
-
      def write_file_to_directory(self, dir_name, file_name, file_content: pd.DataFrame) -> None:
           try:
                os.makedirs(dir_name, exist_ok=True)
                file_path = os.path.join(dir_name, file_name)
-               # saving the file to a directory
                file_content.to_csv(file_path, index=False)
           except Exception as e:
                print(f"Error: Could not write file '{file_name}' to '{dir_name}'. {e}")
 
      
-     def get_file_from_dir(self, dir_name, file_name) -> pd.DataFrame | None:
+     def get_file_from_dir(self, experiment_id, response_variable_name) -> pd.DataFrame | None:
           try:
-               file_path = os.path.join(dir_name, file_name)
+               file_path = Path(self.base_path) / Path(experiment_id) / Path(response_variable_name )
+               print(file_path)
                df = pd.read_csv(file_path)
+               df
                return df
           except FileNotFoundError:
-               print(f"Error: File '{file_name}' not found in directory '{dir_name}'.")
+               print(f"Error: File for : '{response_variable_name}' not found in directory '{experiment_id}'.")
                return None
           except pd.errors.EmptyDataError:
-               print(f"Error: File '{file_name}' is empty or has invalid data.")
+               print(f"Error: File '{response_variable_name}' is empty or has invalid data.")
                return None
           except Exception as e:
-               print(f"Error: Could not retrieve or parse file '{file_name}' from '{dir_name}'. {e}")
+               print(f"Error: Could not retrieve or parse file '{response_variable_name}' from '{experiment_id}'. {e}")
                return None
+     
+     def get_service_names(self):
+          return 
+
+
+if __name__ == "__main__":
+     shandler = LocalStorageHandler("data")
+     file_list = shandler.list_files_in_dir("experiment_data")
+     for f in file_list:
+          data = shandler.get_file_from_dir("experiment_data", f)
+          if data is not None:
+               print(data.head(5))
+
 
 
 # TODO add OXN storage client
